@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resultados - Rally Estudiantil 2.0</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="pantalla-resultados">
+  <div class="efectos-celebracion" id="confetti-container"></div>
+  <div class="rally-container">
+    <h1 class="titulo-principal text-center">¡Juego completado!</h1>
+    <div class="panel-rally text-center">
+      <p class="tiempo-obtenido" id="tiempo-texto">Tiempo: —</p>
+      <p class="calificacion-numero" id="calificacion-numero">—</p>
+      <p style="font-size:1.2rem;color:var(--primary);">Calificación (1.0 - 5.0)</p>
+      <p class="mt-2">Este puntaje se sumará al resto de estaciones del rally.</p>
+      <p class="mt-2">
+        <a href="index.html" class="btn-rally">Continuar a otra estación</a>
+      </p>
+    </div>
+  </div>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var tiempo = parseInt(params.get('tiempo'), 10) || 0;
+    var calificacion = parseFloat(params.get('calificacion')) || 0;
+    document.getElementById('tiempo-texto').textContent = 'Tiempo: ' + Math.floor(tiempo/60) + ' min ' + (tiempo%60) + ' s';
+    document.getElementById('calificacion-numero').textContent = calificacion.toFixed(1);
+    var colores = ['#00d4ff','#00ff88','#7b68ee','#ff6b9d','#ffd93d'];
+    var container = document.getElementById('confetti-container');
+    for (var i = 0; i < 80; i++) {
+      var p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = Math.random()*100 + '%';
+      p.style.top = '-10px';
+      p.style.background = colores[i % colores.length];
+      p.style.animationDelay = Math.random()*2 + 's';
+      p.style.animationDuration = (3 + Math.random()*3) + 's';
+      container.appendChild(p);
+    }
+  </script>
+</body>
+</html>

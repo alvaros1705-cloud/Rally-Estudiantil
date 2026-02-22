@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elegir categoría - Rally Estudiantil 2.0</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="rally-container">
+    <h1 class="titulo-principal text-center">Elige categoría</h1>
+    <p class="text-center mb-2" style="color:var(--primary);">Juego: <strong id="nombre-juego">—</strong></p>
+
+    <div id="contenedor-opciones"></div>
+  </div>
+  <script src="assets/js/datos.js"></script>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var juego = params.get('juego') || '';
+    var equipo = '';
+    try { equipo = localStorage.getItem('rally_equipo') || ''; } catch (e) {}
+    if (!equipo) { window.location.href = 'registro.html'; }
+    var nombres = { memorama: 'Memorama', quiz: 'Quiz', pistas: 'Pistas', reto: 'Reto' };
+    document.getElementById('nombre-juego').textContent = nombres[juego] || juego;
+
+    var cont = document.getElementById('contenedor-opciones');
+    if (juego === 'memorama' && window.RALLY_DATOS && RALLY_DATOS.memorama) {
+      var grid = document.createElement('div');
+      grid.className = 'grid-opciones grid-memorama-4x3';
+      var categorias = RALLY_DATOS.memorama.slice();
+      for (var i = categorias.length - 1; i > 0; i--) {
+        var r = Math.floor(Math.random() * (i + 1));
+        var t = categorias[i]; categorias[i] = categorias[r]; categorias[r] = t;
+      }
+      categorias.forEach(function(c) {
+        var a = document.createElement('a');
+        a.href = 'juego.html?tipo=memorama&categoria=' + encodeURIComponent(c.id);
+        a.className = 'opcion-card';
+        a.innerHTML = '<span class="nombre">' + escapeHtml(c.nombre) + '</span><br><span class="parejas-label">' + c.pares.length + ' parejas</span>';
+        grid.appendChild(a);
+      });
+      cont.appendChild(grid);
+    } else if (juego === 'quiz') {
+      cont.innerHTML = '<div class="panel-rally text-center"><p class="mb-2">Trivias de Ingeniería.</p><a href="juego.html?tipo=quiz" class="btn-rally">Iniciar Quiz</a></div>';
+    } else if (juego === 'pistas') {
+      cont.innerHTML = '<div class="panel-rally text-center"><p class="mb-2">Resuelve acertijos.</p><a href="juego.html?tipo=pistas" class="btn-rally">Iniciar Pistas</a></div>';
+    } else if (juego === 'reto') {
+      cont.innerHTML = '<div class="panel-rally text-center"><p class="mb-2">Retos de ordenar contra el tiempo.</p><a href="juego.html?tipo=reto" class="btn-rally">Iniciar Reto</a></div>';
+    } else {
+      window.location.href = 'seleccion-juego.html';
+    }
+    function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  </script>
+</body>
+</html>

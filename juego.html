@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Juego - Rally Estudiantil 2.0</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="pantalla-juego">
+  <div class="rally-container">
+    <div class="temporizador-juego" id="temporizador">00:00</div>
+    <p id="timer-leyenda" class="text-center" style="font-size:0.9rem;color:var(--primary);opacity:0.9;margin-top:-8px;margin-bottom:8px;"></p>
+    <p class="text-center mb-2" style="color:var(--primary);"><span id="nombre-categoria">—</span> — Equipo: <strong id="nombre-equipo">—</strong></p>
+    <div id="contenedor-juego"></div>
+  </div>
+  <script src="assets/js/datos.js"></script>
+  <script src="assets/js/rally-html.js"></script>
+</body>
+</html>

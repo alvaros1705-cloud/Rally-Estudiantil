@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registro del equipo - Rally Estudiantil 2.0</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="rally-container">
+    <h1 class="titulo-principal text-center">Registro del equipo</h1>
+    <div class="panel-rally">
+      <form id="form-registro" class="form-rally text-center">
+        <label for="nombre_equipo">Nombre del equipo *</label>
+        <input type="text" id="nombre_equipo" name="nombre_equipo" required placeholder="Ej: Los Ingenieros" maxlength="100" autofocus>
+        <p id="error-msg" style="color:#ff6b6b;margin-bottom:16px;display:none;"></p>
+        <button type="submit" class="btn-rally">Guardar y elegir juego</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    document.getElementById('form-registro').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var nombre = document.getElementById('nombre_equipo').value.trim();
+      var err = document.getElementById('error-msg');
+      if (!nombre) {
+        err.textContent = 'El nombre del equipo es obligatorio.';
+        err.style.display = 'block';
+        return;
+      }
+      try { localStorage.setItem('rally_equipo', nombre); } catch (x) {}
+      window.location.href = 'seleccion-juego.html';
+    });
+  </script>
+</body>
+</html>

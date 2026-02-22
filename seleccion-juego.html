@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Elegir juego - Rally Estudiantil 2.0</title>
+  <link rel="stylesheet" href="assets/css/estilos.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="rally-container">
+    <h1 class="titulo-principal text-center">Elige el juego</h1>
+    <p class="text-center mb-2" style="color:var(--primary);">Equipo: <strong id="nombre-equipo">—</strong></p>
+
+    <div class="grid-opciones">
+      <a href="seleccion-categoria.html?juego=memorama" class="opcion-card">
+        <span class="icono">🧠</span>
+        <span class="nombre">Memorama</span>
+        <span style="font-size:0.85rem;opacity:0.9;">Encuentra las parejas</span>
+      </a>
+      <a href="seleccion-categoria.html?juego=quiz" class="opcion-card">
+        <span class="icono">❓</span>
+        <span class="nombre">Quiz / Trivias</span>
+        <span style="font-size:0.85rem;opacity:0.9;">Preguntas de ingeniería</span>
+      </a>
+      <a href="seleccion-categoria.html?juego=pistas" class="opcion-card">
+        <span class="icono">🕵️</span>
+        <span class="nombre">Pistas y acertijos</span>
+        <span style="font-size:0.85rem;opacity:0.9;">Resuelve el enigma</span>
+      </a>
+      <a href="seleccion-categoria.html?juego=reto" class="opcion-card">
+        <span class="icono">⏱️</span>
+        <span class="nombre">Reto contra el tiempo</span>
+        <span style="font-size:0.85rem;opacity:0.9;">Ordena y asocia rápido</span>
+      </a>
+    </div>
+  </div>
+  <script>
+    var equipo = '';
+    try { equipo = localStorage.getItem('rally_equipo') || ''; } catch (e) {}
+    if (!equipo) window.location.href = 'registro.html';
+    document.getElementById('nombre-equipo').textContent = equipo;
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+================================================================================
+  RALLY ESTUDIANTIL 2.0 — IMÁGENES PARA MEMORAMA (PAREJAS POR CATEGORÍA)
+================================================================================
+
+Cada categoría tiene una carpeta con su "id". Dentro de cada carpeta debes
+colocar 24 imágenes (12 parejas × 2 imágenes por pareja) en formato PNG o JPG.
+
+--------------------------------------------------------------------------------
+  CÓMO NOMBRAR CADA IMAGEN Y SU PAREJA (evitar errores)
+--------------------------------------------------------------------------------
+
+Regla fija para todas las categorías:
+
+  • par_01_a.png  y  par_01_b.png   →  Pareja 1 (las dos cartas que forman el par)
+  • par_02_a.png  y  par_02_b.png   →  Pareja 2
+  • par_03_a.png  y  par_03_b.png   →  Pareja 3
+  • ...
+  • par_12_a.png  y  par_12_b.png   →  Pareja 12
+
+  - El número (01 a 12) identifica la pareja.
+  - La letra "a" y "b" son las dos cartas de esa pareja (pueden ser
+    imagen-imagen, imagen-texto o texto-texto; si usas solo texto, el juego
+    ya muestra texto por defecto y no hace falta imagen para esa carta).
+
+Recomendación para no equivocarse:
+  - Par 1: mismo concepto en ambas (ej. par_01_a = logo PHP, par_01_b = texto "PHP").
+  - Usa siempre dos dígitos: 01, 02, ... 12.
+  - Extensión: .png o .jpg (todas igual en una misma categoría).
+
+--------------------------------------------------------------------------------
+  CARPETAS POR CATEGORÍA (creadas en assets/images/memorama/)
+--------------------------------------------------------------------------------
+
+  sistemas-programacion     → Programación y Sistemas
+  sistemas-redes            → Redes y Conectividad
+  sistemas-software         → Desarrollo de Software
+  sistemas-usabilidad       → UX y Usabilidad
+  sistemas-vida-real        → Sistemas en la Vida Real
+  datos-ia                  → Inteligencia Artificial
+  datos-analytics           → Datos e Ingeniería de Datos
+  mecanica-energia          → Energía y Mecánica
+  mecanica-automotriz       → Ingeniería Automotriz
+  mecanica-robotica         → Robótica y Automatización
+  curiosidades-ingenieria   → Curiosidades de la Ingeniería
+
+En cada carpeta: par_01_a, par_01_b, par_02_a, par_02_b, ... par_12_b.
+
+--------------------------------------------------------------------------------
+  EJEMPLO (categoría "Programación y Sistemas")
+--------------------------------------------------------------------------------
+
+  assets/images/memorama/sistemas-programacion/
+    par_01_a.png   ← primera carta del par 1 (ej. imagen "PHP")
+    par_01_b.png   ← segunda carta del par 1 (ej. texto o imagen "Lenguaje del servidor web")
+    par_02_a.png
+    par_02_b.png
+    ...
+    par_12_a.png
+    par_12_b.png
+
+Si no añades imágenes, el juego sigue funcionando mostrando solo texto en las
+cartas (como está ahora). Cuando existan las imágenes en la carpeta de la
+categoría, se pueden usar en una futura versión del juego.
+
+================================================================================

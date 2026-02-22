@@ -1,0 +1,860 @@
+/**
+ * Rally Estudiantil 2.0 - Estilos futuristas
+ * Responsive: TV/pantalla grande y móvil. Paleta: azules, verdes, blancos.
+ */
+
+:root {
+  --bg-dark: #0a0e17;
+  --bg-panel: rgba(10, 30, 50, 0.85);
+  --primary: #00d4ff;
+  --primary-glow: rgba(0, 212, 255, 0.6);
+  --secondary: #00ff88;
+  --secondary-glow: rgba(0, 255, 136, 0.5);
+  --accent: #7b68ee;
+  --white: #e8f4fc;
+  --border: rgba(0, 212, 255, 0.3);
+  --font-title: 'Orbitron', sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Mejor tacto en móvil */
+@media (hover: none) {
+  .btn-rally:hover { transform: none; }
+  .opcion-card:hover { transform: none; }
+}
+a, button, .btn-rally, .opcion-card, .carta-memorama, .quiz-opciones label {
+  -webkit-tap-highlight-color: rgba(0, 212, 255, 0.2);
+}
+
+html, body {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg-dark);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 22px;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(0, 255, 136, 0.06) 0%, transparent 50%),
+    linear-gradient(180deg, #0a0e17 0%, #0d1520 50%, #0a0e17 100%);
+}
+
+/* Contenedor principal tipo TV */
+.rally-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+/* Títulos */
+h1, .titulo-principal {
+  font-family: var(--font-title);
+  font-weight: 900;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 40px var(--primary-glow);
+  margin-bottom: 0.5em;
+}
+
+h2 {
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+}
+
+/* Botones futuristas */
+.btn-rally {
+  display: inline-block;
+  padding: 20px 50px;
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bg-dark);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 30px var(--primary-glow);
+  text-decoration: none;
+}
+
+.btn-rally:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 50px var(--secondary-glow);
+}
+
+.btn-rally.outline {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.btn-rally.outline:hover {
+  background: rgba(0, 212, 255, 0.15);
+}
+
+/* Panel con borde glow */
+.panel-rally {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  margin: 20px 0;
+  box-shadow: 0 0 60px rgba(0, 212, 255, 0.1), inset 0 0 60px rgba(0, 212, 255, 0.02);
+  max-width: 900px;
+}
+
+/* Banner y logos */
+.banner-rally {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  margin-bottom: 30px;
+  border-radius: 12px;
+  box-shadow: 0 0 40px var(--primary-glow);
+}
+
+.logos-programas {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 30px 0;
+}
+
+.logos-programas img {
+  height: 70px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 15px var(--primary-glow));
+}
+
+/* Pantalla bienvenida */
+.pantalla-bienvenida .btn-rally {
+  margin-top: 40px;
+  font-size: 1.8rem;
+  padding: 25px 70px;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 30px var(--primary-glow); }
+  50% { box-shadow: 0 0 60px var(--secondary-glow); }
+}
+
+/* Instrucciones */
+.lista-instrucciones {
+  list-style: none;
+  text-align: left;
+}
+
+.lista-instrucciones li {
+  padding: 12px 0;
+  padding-left: 40px;
+  position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.lista-instrucciones li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--secondary);
+  font-weight: bold;
+}
+
+/* Formulario registro */
+.form-rally label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.form-rally input[type="text"] {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px 20px;
+  font-size: 1.2rem;
+  font-family: var(--font-body);
+  background: rgba(0,0,0,0.4);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  color: var(--white);
+  margin-bottom: 24px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-rally input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* Grid de selección (juegos / categorías) */
+.grid-opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+  margin: 30px 0;
+}
+
+/* Memorama: matriz 4 columnas x 3 filas (12 categorías) */
+.grid-opciones.grid-memorama-4x3 {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, auto);
+  max-width: min(95vw, 1000px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.grid-opciones .opcion-card {
+  background: rgba(0, 40, 80, 0.5);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.grid-opciones .opcion-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 30px var(--primary-glow);
+  transform: translateY(-4px);
+}
+
+.grid-opciones .opcion-card .icono {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.grid-opciones .opcion-card .nombre {
+  font-family: var(--font-title);
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Número al lado de "parejas" (no del título de categoría) */
+.grid-opciones .opcion-card .parejas-label {
+  font-size: 0.9rem;
+  opacity: 0.95;
+  color: var(--white);
+  display: block;
+  margin-top: 4px;
+}
+
+/* Temporizador en juego */
+.temporizador-juego {
+  font-family: var(--font-title);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--secondary);
+  text-shadow: 0 0 20px var(--secondary-glow);
+  margin-bottom: 20px;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+.temporizador-juego.urgente {
+  color: #ff6b6b !important;
+  text-shadow: 0 0 20px rgba(255, 107, 107, 0.6) !important;
+}
+
+/* Pantalla de juego: más espacio para la matriz */
+body.pantalla-juego .rally-container {
+  padding: 20px 24px;
+  justify-content: flex-start;
+}
+body.pantalla-juego .temporizador-juego {
+  margin-bottom: 10px;
+}
+body.pantalla-juego .rally-container > p {
+  margin-bottom: 12px;
+}
+body.pantalla-juego #contenedor-juego {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+}
+
+/* Memorama: grid de cartas — tamaño uniforme y moderado (parejas iguales) */
+.memorama-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: min(90vw, 1100px);
+  margin: 0 auto;
+  flex: 1;
+  min-height: 200px;
+  max-height: min(72vh, 620px);
+}
+
+@media (max-width: 1200px) {
+  .memorama-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+.carta-memorama {
+  aspect-ratio: 1;
+  min-height: 56px;
+  background: linear-gradient(145deg, rgba(0, 50, 100, 0.8), rgba(0, 20, 50, 0.9));
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: clamp(0.65rem, 1.2vw, 0.95rem);
+  font-weight: 600;
+  text-align: center;
+  padding: 6px;
+  transition: all 0.25s ease;
+  backface-visibility: hidden;
+  position: relative;
+  overflow: hidden;
+}
+
+.carta-memorama .cara {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  backface-visibility: hidden;
+}
+
+.carta-memorama .cara.reves {
+  background: linear-gradient(145deg, var(--primary), #0099cc);
+  color: var(--bg-dark);
+  font-size: clamp(0.9rem, 2vw, 1.3rem);
+}
+
+.carta-memorama.volteada .cara.reves,
+.carta-memorama.emparejada .cara.reves {
+  pointer-events: none;
+}
+
+.carta-memorama:hover:not(.volteada):not(.emparejada) {
+  border-color: var(--primary);
+  box-shadow: 0 0 25px var(--primary-glow);
+  transform: scale(1.02);
+}
+
+.carta-memorama.emparejada {
+  border-color: var(--secondary);
+  box-shadow: 0 0 20px var(--secondary-glow);
+  cursor: default;
+}
+
+.carta-memorama.emparejada .cara.reves {
+  background: linear-gradient(145deg, var(--secondary), #00cc66);
+}
+
+/* Carta con imagen (cuando se usen imágenes por categoría) */
+.carta-memorama .cara.frente img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Mensaje tiempo cumplido / botón Terminado en memorama */
+.memorama-mensaje-final {
+  text-align: center;
+  padding: 24px;
+  margin-top: 16px;
+}
+.memorama-mensaje-final.memorama-completado {
+  margin-top: 0;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+}
+.memorama-completado-texto {
+  color: var(--secondary);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  text-shadow: 0 0 24px var(--secondary-glow);
+  margin: 0 auto 20px;
+  line-height: 1.2;
+}
+.memorama-completado-btn {
+  margin: 0;
+}
+.memorama-mensaje-final .btn-rally {
+  margin-top: 16px;
+}
+.memorama-tiempo-cumplido {
+  color: #ff6b6b;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+/* Quiz */
+.quiz-pregunta {
+  font-size: 1.4rem;
+  margin-bottom: 28px;
+  color: var(--white);
+}
+
+.quiz-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.quiz-opciones label {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  background: rgba(0, 40, 80, 0.5);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.quiz-opciones label:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+.quiz-opciones input:checked + span {
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+.quiz-opciones input { margin: 0; }
+
+/* Pistas */
+.pista-texto {
+  font-size: 1.3rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  padding: 24px;
+  background: rgba(0, 40, 80, 0.4);
+  border-left: 4px solid var(--primary);
+  border-radius: 0 12px 12px 0;
+}
+
+.pista-input {
+  width: 100%;
+  max-width: 500px;
+  padding: 18px 24px;
+  font-size: 1.2rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.4);
+  color: var(--white);
+  margin-top: 16px;
+}
+
+.pista-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* Resultados: serpentinas y celebración */
+.pantalla-resultados {
+  text-align: center;
+}
+
+.pantalla-resultados .calificacion-numero {
+  font-family: var(--font-title);
+  font-size: 5rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 60px var(--secondary-glow);
+  margin: 20px 0;
+  animation: scale-in 0.6s ease;
+}
+
+@keyframes scale-in {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.tiempo-obtenido {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-bottom: 30px;
+}
+
+/* Contenedor para efectos de fuegos artificiales / serpentinas */
+.efectos-celebracion {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confetti-fall 4s ease-in-out forwards;
+}
+
+@keyframes confetti-fall {
+  to {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Utilidades */
+.text-center { text-align: center; }
+.mt-2 { margin-top: 1rem; }
+.mb-2 { margin-bottom: 1rem; }
+
+/* Reto: ordenar items arrastrables */
+.reto-lista {
+  list-style: none;
+  margin: 20px 0;
+}
+
+.reto-lista li {
+  padding: 16px 24px;
+  margin: 8px 0;
+  background: rgba(0, 40, 80, 0.5);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.reto-lista li:hover {
+  border-color: var(--primary);
+}
+
+.reto-lista li.dragging {
+  opacity: 0.7;
+  cursor: grabbing;
+}
+
+.reto-lista li.correcto {
+  border-color: var(--secondary);
+  box-shadow: 0 0 15px var(--secondary-glow);
+}
+
+/* Quiz, Pistas, Reto: layout de dos columnas (prueba a la izquierda, puntajes a la derecha) */
+.reto-contenedor-flex,
+.quiz-contenedor-flex,
+.pistas-contenedor-flex {
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  max-width: min(95vw, 1400px);
+  margin: 0 auto;
+  flex: 1;
+  min-height: 0;
+}
+.reto-contenedor-flex .reto-panel-izq,
+.quiz-contenedor-flex .reto-panel-izq,
+.pistas-contenedor-flex .reto-panel-izq {
+  flex: 1;
+  min-width: 0;
+}
+.reto-contenedor-flex .reto-panel-der,
+.quiz-contenedor-flex .reto-panel-der,
+.pistas-contenedor-flex .reto-panel-der {
+  width: 280px;
+  flex-shrink: 0;
+}
+.reto-puntajes-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  position: sticky;
+  top: 20px;
+}
+.reto-puntajes-panel h3 {
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  color: var(--primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+.reto-puntajes-lista {
+  list-style: none;
+}
+.reto-puntajes-lista li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.reto-puntajes-lista li .numero { color: var(--primary); margin-right: 8px; }
+.reto-puntajes-lista li .puntaje { font-weight: 700; color: var(--secondary); }
+.reto-puntajes-lista li.tiempo-cumplido .puntaje,
+.reto-puntajes-lista li.incorrecto .puntaje { color: #ff6b6b; }
+.reto-tiempo-restante {
+  font-size: 0.9rem;
+  color: var(--secondary);
+  margin-top: 12px;
+  text-align: center;
+}
+
+/* ========== Animaciones tipo Flash (botones, glow, destellos) ========== */
+.btn-rally {
+  animation: btn-flash-glow 2.5s ease-in-out infinite;
+}
+.btn-rally:hover {
+  animation: btn-flash-hover 0.4s ease forwards;
+}
+@keyframes btn-flash-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--primary-glow), 0 0 40px rgba(0,212,255,0.2); }
+  50% { box-shadow: 0 0 35px var(--primary-glow), 0 0 60px rgba(0,255,136,0.3); }
+}
+@keyframes btn-flash-hover {
+  to {
+    transform: scale(1.08);
+    box-shadow: 0 0 45px var(--secondary-glow), 0 0 80px rgba(0,255,136,0.4);
+  }
+}
+
+.opcion-card {
+  animation: card-idle 3s ease-in-out infinite;
+}
+.opcion-card:hover {
+  animation: card-flash 0.35s ease forwards;
+}
+@keyframes card-idle {
+  0%, 100% { box-shadow: 0 0 0 transparent; }
+  50% { box-shadow: 0 0 15px rgba(0,212,255,0.15); }
+}
+@keyframes card-flash {
+  to {
+    box-shadow: 0 0 35px var(--primary-glow);
+    transform: translateY(-6px) scale(1.02);
+  }
+}
+
+.titulo-principal {
+  animation: title-shine 4s ease-in-out infinite;
+}
+@keyframes title-shine {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.15); }
+}
+
+/* Efecto destello al hacer clic en botón */
+.btn-rally:active {
+  animation: flash-click 0.2s ease;
+}
+@keyframes flash-click {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
+}
+
+/* ========== Responsive: móvil y tablet ========== */
+@media (max-width: 768px) {
+  html, body {
+    font-size: 16px;
+  }
+  .rally-container {
+    padding: 16px 12px;
+    max-width: 100%;
+  }
+  .titulo-principal {
+    font-size: clamp(1.4rem, 6vw, 2rem);
+    letter-spacing: 0.08em;
+  }
+  .btn-rally {
+    padding: 14px 28px;
+    font-size: 1.1rem;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .panel-rally {
+    padding: 20px 16px;
+    margin: 12px 0;
+  }
+  .banner-rally {
+    max-width: 100%;
+    margin-bottom: 16px;
+  }
+  .logos-programas {
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .logos-programas img {
+    height: 44px;
+  }
+  .pantalla-bienvenida .btn-rally {
+    margin-top: 24px;
+    font-size: 1.3rem;
+    padding: 18px 40px;
+  }
+  .grid-opciones {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .grid-opciones.grid-memorama-4x3 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    max-width: 100%;
+  }
+  .grid-opciones .opcion-card {
+    padding: 20px 16px;
+    min-height: 48px;
+  }
+  .grid-opciones .opcion-card .icono {
+    font-size: 2rem;
+  }
+  .temporizador-juego {
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+  }
+  body.pantalla-juego .rally-container {
+    padding: 12px 10px;
+  }
+  body.pantalla-juego .rally-container > p {
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+  }
+  .memorama-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    max-width: 100%;
+    max-height: min(65vh, 500px);
+  }
+  .carta-memorama {
+    min-height: 48px;
+    font-size: 0.6rem;
+    padding: 4px;
+  }
+  .carta-memorama .cara.reves {
+    font-size: 0.85rem;
+  }
+  .memorama-completado-texto {
+    font-size: clamp(1.3rem, 5vw, 1.8rem);
+  }
+  .memorama-mensaje-final .btn-rally {
+    margin-top: 12px;
+  }
+  .reto-contenedor-flex,
+  .quiz-contenedor-flex,
+  .pistas-contenedor-flex {
+    flex-direction: column;
+    gap: 16px;
+    max-width: 100%;
+  }
+  .reto-contenedor-flex .reto-panel-der,
+  .quiz-contenedor-flex .reto-panel-der,
+  .pistas-contenedor-flex .reto-panel-der {
+    width: 100%;
+  }
+  .reto-puntajes-panel {
+    position: static;
+    padding: 16px;
+  }
+  .reto-puntajes-panel h3 {
+    font-size: 1rem;
+  }
+  .quiz-pregunta {
+    font-size: 1.15rem;
+    margin-bottom: 20px;
+  }
+  .quiz-opciones label {
+    padding: 14px 18px;
+    gap: 12px;
+    min-height: 48px;
+  }
+  .pista-texto {
+    font-size: 1.1rem;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .pista-input {
+    max-width: 100%;
+    padding: 14px 18px;
+    font-size: 1rem;
+  }
+  .pantalla-resultados .calificacion-numero {
+    font-size: 3rem;
+  }
+  .tiempo-obtenido {
+    font-size: 1.2rem;
+  }
+  .form-rally input[type="text"] {
+    padding: 14px 16px;
+    font-size: 1rem;
+  }
+  .reto-lista li {
+    padding: 12px 16px;
+    min-height: 48px;
+  }
+  #timer-leyenda {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  html, body {
+    font-size: 15px;
+  }
+  .memorama-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+  }
+  .carta-memorama .cara.reves {
+    font-size: 0.75rem;
+  }
+  .titulo-principal {
+    font-size: 1.35rem;
+  }
+  .btn-rally {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+  .grid-opciones.grid-memorama-4x3 {
+    grid-template-columns: 1fr;
+  }
+}

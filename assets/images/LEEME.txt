@@ -1,0 +1,10 @@
+Coloque aquí las 4 imágenes en PNG con estos nombres exactos:
+
+  banner-rally.png   → Banner oficial del Rally
+  logo-sistemas.png → Logo Ingeniería de Sistemas (engranajes)
+  logo-datos-ia.png → Logo Ingeniería de Datos e IA (cerebro IDA · IA)
+  logo-mecanica.png → Logo Ingeniería Mecánica
+
+Puede copiar los PNG que subió a Cursor desde la carpeta donde Cursor los guardó
+a esta carpeta (assets/images) y renombrarlos como arriba.
+Si no hay imágenes, la página de bienvenida se ve igual pero sin banner ni logos.
