@@ -451,12 +451,30 @@
     var pistas = seleccionarPartidaPorTematicas(datos.pistas || [], 10, 3, function (item) {
       return (item && item.categoria) ? item.categoria : 'General';
     }).filter(function (p) { return p && p.pista && p.respuesta; });
+
+    /** Cada ítem: estado null (primera vez en cola), luego 'correcta' | 'incorrecta' | 'pendiente'. */
+    var master = [];
+    for (var pi = 0; pi < pistas.length; pi++) {
+      var raw = pistas[pi];
+      master.push({
+        origIdx: pi,
+        pista: raw.pista,
+        respuesta: raw.respuesta,
+        indicio: raw.indicio,
+        estado: null
+      });
+    }
+    var rondaCola = master.map(function (_, i) { return i; });
     var idx = 0;
     var usadoPista = false;
     var tiempoInicioPista = null;
     var juegoPistasTerminado = false;
     var limiteDisparado = false;
     var juegoPistasIniciado = false;
+    var acertijosTiempoRegistrado = {};
+    function itemActual() {
+      return master[rondaCola[idx]];
+    }
 
     var cronometroJuego = RT.crearCronometroDisplay('temporizador', function (ms) {
       if (juegoPistasTerminado || limiteDisparado) return;
@@ -491,7 +509,6 @@
     var btnSaltar = document.getElementById('pista-saltar');
     var tiemposListaEl = document.getElementById('pistas-tiempos-lista');
     var tiempoRestanteEl = document.getElementById('pistas-tiempo-restante');
-    var temporizadorEl = document.getElementById('temporizador');
 
     function normalizarTexto(texto) {
       return (texto || '')
@@ -550,61 +567,98 @@
       mostrarAvisoEstacionFinal();
     }
 
+    /** Al terminar la cola actual: nueva ronda solo con incorrectas y pendientes; si no quedan → éxito. */
+    function prepararSiguienteRonda() {
+      var nueva = [];
+      for (var i = 0; i < master.length; i++) {
+        if (master[i].estado !== 'correcta') nueva.push(i);
+      }
+      if (nueva.length === 0) {
+        finalizarPistasExitoso();
+        return false;
+      }
+      rondaCola = nueva;
+      idx = 0;
+      return true;
+    }
+
     function mostrarPista() {
       if (juegoPistasTerminado) return;
       if (btnPista) btnPista.disabled = false;
       if (tiempoRestanteEl) tiempoRestanteEl.textContent = 'Límite total de sesión: 3:00.';
-      if (idx >= pistas.length) {
-        finalizarPistasExitoso();
-        return;
+
+      while (idx >= rondaCola.length) {
+        if (!prepararSiguienteRonda()) return;
+        if (juegoPistasTerminado) return;
       }
+
       if (!juegoPistasIniciado) {
         actualizarLeyendaLimite(0);
         cronometroJuego.start();
         juegoPistasIniciado = true;
       }
+
+      var item = itemActual();
       tiempoInicioPista = Date.now();
       usadoPista = false;
       indicioEl.style.display = 'none';
       indicioEl.textContent = '';
-      textoEl.textContent = pistas[idx].pista;
+      var pref = '';
+      if (item.estado === 'pendiente') pref = '(Pendiente) ';
+      else if (item.estado === 'incorrecta') pref = '(Incorrecta — reintenta) ';
+      textoEl.textContent = pref + item.pista;
       inputEl.value = '';
       inputEl.focus();
     }
 
     function saltarPregunta() {
       if (juegoPistasTerminado) return;
-      var ms = tiempoInicioPista ? (Date.now() - tiempoInicioPista) : 0;
-      agregarTiempoALista(idx + 1, ms);
+      var item = itemActual();
+      item.estado = 'pendiente';
       idx++;
       setTimeout(mostrarPista, 400);
     }
 
     btnSaltar.addEventListener('click', saltarPregunta);
     btnPista.addEventListener('click', function () {
-      if (usadoPista) return;
+      if (juegoPistasTerminado || usadoPista) return;
+      var item = itemActual();
       usadoPista = true;
-      indicioEl.textContent = '💡 Indicio: ' + (pistas[idx].indicio || 'No hay indicio disponible.');
+      indicioEl.textContent = '💡 Indicio: ' + (item.indicio || 'No hay indicio disponible.');
       indicioEl.style.display = 'block';
       btnPista.disabled = true;
     });
     btn.addEventListener('click', function () {
       if (juegoPistasTerminado) return;
+      var item = itemActual();
       var usuarioNorm = normalizarTexto(inputEl.value);
       if (!usuarioNorm) {
         inputEl.style.borderColor = '#ff6b6b';
         setTimeout(function () { inputEl.style.borderColor = ''; }, 800);
         return;
       }
-      if (usuarioNorm === normalizarTexto(pistas[idx].respuesta)) {
+      if (usuarioNorm === normalizarTexto(item.respuesta)) {
         var ms = tiempoInicioPista ? (Date.now() - tiempoInicioPista) : 0;
-        agregarTiempoALista(idx + 1, ms);
+        var oid = item.origIdx;
+        if (!acertijosTiempoRegistrado[oid]) {
+          agregarTiempoALista(oid + 1, ms);
+          acertijosTiempoRegistrado[oid] = true;
+        }
+        item.estado = 'correcta';
         idx++;
         setTimeout(mostrarPista, 400);
-      } else { inputEl.style.borderColor = '#ff6b6b'; setTimeout(function () { inputEl.style.borderColor = ''; }, 1000); }
+      } else {
+        item.estado = 'incorrecta';
+        idx++;
+        inputEl.style.borderColor = '#ff6b6b';
+        setTimeout(function () {
+          inputEl.style.borderColor = '';
+          mostrarPista();
+        }, 600);
+      }
     });
     inputEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') btn.click(); });
-    if (!pistas.length) {
+    if (!master.length) {
       var sinP = document.createElement('p');
       sinP.className = 'text-center';
       sinP.style.color = 'var(--primary)';
