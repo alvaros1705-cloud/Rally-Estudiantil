@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="pantalla-rally-nav">
+  <button type="button" class="btn-inicio" onclick="irInicio()" aria-label="Volver al inicio">← Inicio</button>
   <div class="rally-container">
     <h1 class="titulo-principal text-center">Elige el juego</h1>
     <p class="text-center mb-2" style="color:var(--primary);">Equipo: <strong id="nombre-equipo">—</strong></p>
@@ -19,17 +20,17 @@
         <span class="nombre">Memorama</span>
         <span style="font-size:0.85rem;opacity:0.9;">Encuentra las parejas</span>
       </a>
-      <a href="seleccion-categoria.html?juego=quiz" class="opcion-card">
+      <a href="juego.html?tipo=quiz" class="opcion-card">
         <span class="icono">❓</span>
         <span class="nombre">Quiz / Trivias</span>
         <span style="font-size:0.85rem;opacity:0.9;">Preguntas de ingeniería</span>
       </a>
-      <a href="seleccion-categoria.html?juego=pistas" class="opcion-card">
+      <a href="juego.html?tipo=pistas" class="opcion-card">
         <span class="icono">🕵️</span>
         <span class="nombre">Pistas y acertijos</span>
         <span style="font-size:0.85rem;opacity:0.9;">Resuelve el enigma</span>
       </a>
-      <a href="seleccion-categoria.html?juego=reto" class="opcion-card">
+      <a href="juego.html?tipo=reto" class="opcion-card">
         <span class="icono">⏱️</span>
         <span class="nombre">Reto contra el tiempo</span>
         <span style="font-size:0.85rem;opacity:0.9;">Ordena y asocia rápido</span>
@@ -37,6 +38,9 @@
     </div>
   </div>
   <script>
+    function irInicio() {
+      window.location.href = 'index.html';
+    }
     var equipo = '';
     try { equipo = localStorage.getItem('rally_equipo') || ''; } catch (e) {}
     if (!equipo) window.location.href = 'registro.html';

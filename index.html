@@ -10,20 +10,38 @@
 </head>
 <body class="pantalla-bienvenida">
   <div class="rally-container">
-    <h1 class="titulo-principal text-center">Rally Estudiantil 2.0</h1>
+    <h1 class="titulo-principal text-center">Rally de Ingenierías 2.0</h1>
     <p class="text-center mb-2" style="font-size:1.2rem; color:var(--primary);">
       ¡Bienvenidos a la estación de juegos!
     </p>
 
-    <img src="assets/images/banner-rally.png" alt="Banner Rally Estudiantil" class="banner-rally" onerror="this.style.display='none'">
+    <img src="assets/images/banner-rally.png?v=2" alt="Banner Rally Estudiantil" class="banner-rally" onerror="this.style.display='none'">
 
     <div class="logos-programas">
-      <img src="assets/images/logo-sistemas.png" alt="Ingeniería de Sistemas" onerror="this.remove()">
-      <img src="assets/images/logo-datos-ia.png" alt="Ingeniería de Datos e IA" onerror="this.remove()">
-      <img src="assets/images/logo-mecanica.png" alt="Ingeniería Mecánica" onerror="this.remove()">
+      <div class="logo-prog-wrap">
+        <img class="logo-prog" src="assets/images/logo-mecanica.png" alt="Ingeniería Mecánica" onerror="this.remove()">
+      </div>
+      <div class="logo-prog-wrap">
+        <img class="logo-prog" src="assets/images/logo-industrial.png" alt="Ingeniería Industrial" onerror="this.remove()">
+      </div>
+      <div class="logo-prog-wrap logo-prog-wrap--sistemas">
+        <img class="logo-prog logo-prog--sistemas" src="assets/images/logo-sistemas.png?v=3" alt="Ingeniería de Sistemas" onerror="this.remove()">
+      </div>
+      <div class="logo-prog-wrap">
+        <img class="logo-prog" src="assets/images/logo-datos-ia.png" alt="Ingeniería de Datos e IA" onerror="this.remove()">
+      </div>
+      <div class="logo-prog-wrap">
+        <img class="logo-prog" src="assets/images/logo-multimedia.png" alt="Ingeniería Multimedia" onerror="this.remove()">
+      </div>
     </div>
+
+    <p class="text-center mt-2" style="margin-bottom:16px;">
+      <button type="button" class="btn-rally outline" id="btn-ver-tiempos">Ver tiempos acumulados</button>
+      <button type="button" class="btn-rally outline" id="btn-reiniciar-tiempos" style="margin-left:8px;">Reiniciar tiempos</button>
+    </p>
 
     <a href="instrucciones.html" class="btn-rally">START / INICIAR</a>
   </div>
+  <script src="assets/js/rally-tiempo.js"></script>
 </body>
 </html>

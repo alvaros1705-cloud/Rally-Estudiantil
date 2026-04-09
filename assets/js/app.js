@@ -39,7 +39,7 @@
     return segundos;
   }
 
-  function enviarPuntaje(cb) {
+  function enviarRegistroTiempo(cb) {
     var tipo = window.RALLY_TIPO;
     var categoria = window.RALLY_CATEGORIA || '';
     var equipo = window.RALLY_EQUIPO || '';
@@ -64,14 +64,14 @@
       .then(function (data) {
         if (cb) cb(data);
         if (data && data.ok && window.RALLY_RESULTADOS) {
-          var u = window.RALLY_RESULTADOS + '?tiempo=' + tiempo + '&calificacion=' + (data.calificacion || 0);
+          var u = window.RALLY_RESULTADOS + '?tiempo_ms=' + (tiempo * 1000);
           window.location.href = u;
         }
       })
       .catch(function () {
         if (cb) cb(null);
         if (window.RALLY_RESULTADOS) {
-          window.location.href = window.RALLY_RESULTADOS + '?tiempo=' + segundos + '&calificacion=0';
+          window.location.href = window.RALLY_RESULTADOS + '?tiempo_ms=' + (segundos * 1000);
         }
       });
   }
@@ -80,7 +80,8 @@
     iniciarTemporizador: iniciarTemporizador,
     detenerTemporizador: detenerTemporizador,
     getSegundos: function () { return segundos; },
-    enviarPuntaje: enviarPuntaje
+    enviarRegistroTiempo: enviarRegistroTiempo,
+    enviarPuntaje: enviarRegistroTiempo
   };
 
   /* --- MEMORAMA --- */
@@ -123,7 +124,7 @@
             volteadas = [];
             if (emparejados >= totalPares) {
               setTimeout(function () {
-                RALLY.enviarPuntaje();
+                RALLY.enviarRegistroTiempo();
               }, 400);
             }
           } else {
@@ -168,7 +169,7 @@
 
     function mostrarPregunta() {
       if (indice >= preguntas.length) {
-        RALLY.enviarPuntaje();
+        RALLY.enviarRegistroTiempo();
         return;
       }
       var p = preguntas[indice];
@@ -193,7 +194,7 @@
       siguienteBtn.style.display = 'none';
       indice++;
       if (indice >= preguntas.length) {
-        RALLY.enviarPuntaje();
+        RALLY.enviarRegistroTiempo();
         return;
       }
       mostrarPregunta();
@@ -223,7 +224,7 @@
 
     function mostrarPista() {
       if (indice >= pistas.length) {
-        RALLY.enviarPuntaje();
+        RALLY.enviarRegistroTiempo();
         return;
       }
       textoEl.textContent = pistas[indice].pista;
@@ -263,7 +264,7 @@
 
     function mostrarReto() {
       if (indice >= retos.length) {
-        RALLY.enviarPuntaje();
+        RALLY.enviarRegistroTiempo();
         return;
       }
       var r = retos[indice];
@@ -275,49 +276,96 @@
       var shuffled = items.slice().sort(function () { return Math.random() - 0.5; });
       shuffled.forEach(function (texto) {
         var li = document.createElement('li');
-        li.textContent = texto;
-        li.draggable = true;
+        li.className = 'reto-item-row';
+        li.draggable = false;
+
+        var handle = document.createElement('span');
+        handle.className = 'reto-item-handle';
+        handle.draggable = true;
+        handle.textContent = '⋮⋮';
+        handle.title = 'Arrastrar para ordenar';
+
+        var textSpan = document.createElement('span');
+        textSpan.className = 'reto-item-texto';
+        textSpan.textContent = texto;
+
+        var controls = document.createElement('span');
+        controls.className = 'reto-item-controles';
+        var btnUp = document.createElement('button');
+        btnUp.type = 'button';
+        btnUp.className = 'btn-reto-mover';
+        btnUp.setAttribute('aria-label', 'Subir');
+        btnUp.textContent = '▲';
+        var btnDown = document.createElement('button');
+        btnDown.type = 'button';
+        btnDown.className = 'btn-reto-mover';
+        btnDown.setAttribute('aria-label', 'Bajar');
+        btnDown.textContent = '▼';
+
+        btnUp.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          var prev = li.previousElementSibling;
+          if (prev) listaEl.insertBefore(li, prev);
+        });
+        btnDown.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          var nx = li.nextElementSibling;
+          if (nx) listaEl.insertBefore(nx, li);
+        });
+
+        handle.addEventListener('dragstart', function (e) {
+          e.dataTransfer.setData('text/plain', 'reto-item');
+          e.dataTransfer.effectAllowed = 'move';
+          li.classList.add('dragging');
+        });
+        handle.addEventListener('dragend', function () {
+          li.classList.remove('dragging');
+        });
+
+        controls.appendChild(btnUp);
+        controls.appendChild(btnDown);
+        li.appendChild(handle);
+        li.appendChild(textSpan);
+        li.appendChild(controls);
         listaEl.appendChild(li);
       });
       window.RALLY_ORDEN_CORRECTO_VALORES = ordenCorrecto.map(function (i) { return items[i]; });
       habilitarDrag();
     }
 
+    var retoDragInicializado = false;
     function habilitarDrag() {
-      var lis = listaEl.querySelectorAll('li');
-      lis.forEach(function (li) {
-        li.addEventListener('dragstart', function (e) {
-          e.dataTransfer.setData('text/plain', li.dataset.index);
-          li.classList.add('dragging');
-        });
-        li.addEventListener('dragend', function () {
-          li.classList.remove('dragging');
-        });
-      });
+      if (retoDragInicializado) return;
+      retoDragInicializado = true;
       listaEl.addEventListener('dragover', function (e) {
         e.preventDefault();
-        var drag = listaEl.querySelector('.dragging');
-        if (drag) {
-          var after = getAfter(listaEl, e.clientY);
-          if (after) listaEl.insertBefore(drag, after);
-          else listaEl.appendChild(drag);
+        e.dataTransfer.dropEffect = 'move';
+        var drag = listaEl.querySelector('li.dragging');
+        if (!drag) return;
+        var els = listaEl.querySelectorAll('li:not(.dragging)');
+        var insertBefore = null;
+        for (var i = 0; i < els.length; i++) {
+          var box = els[i].getBoundingClientRect();
+          if (e.clientY < box.top + box.height / 2) {
+            insertBefore = els[i];
+            break;
+          }
         }
+        if (insertBefore) listaEl.insertBefore(drag, insertBefore);
+        else listaEl.appendChild(drag);
       });
-    }
-
-    function getAfter(container, y) {
-      var els = container.querySelectorAll('li:not(.dragging)');
-      for (var i = 0; i < els.length; i++) {
-        var box = els[i].getBoundingClientRect();
-        if (y < box.top + box.height / 2) return els[i];
-      }
-      return null;
+      listaEl.addEventListener('drop', function (e) {
+        e.preventDefault();
+      });
     }
 
     btnVerificar.addEventListener('click', function () {
       var correctOrder = window.RALLY_ORDEN_CORRECTO_VALORES || [];
       var lis = listaEl.querySelectorAll('li');
-      var currentOrder = [].map.call(lis, function (li) { return li.textContent.trim(); });
+      var currentOrder = [].map.call(lis, function (li) {
+        var t = li.querySelector('.reto-item-texto');
+        return (t ? t.textContent : li.textContent).trim();
+      });
       var correcto = correctOrder.length === currentOrder.length && correctOrder.every(function (v, i) {
         return v === currentOrder[i];
       });

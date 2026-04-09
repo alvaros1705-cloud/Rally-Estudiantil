@@ -1,10 +1,13 @@
-Coloque aquí las 4 imágenes en PNG con estos nombres exactos:
+Coloque aquí las imágenes en PNG con estos nombres exactos (minúsculas, como en index.html):
 
-  banner-rally.png   → Banner oficial del Rally
-  logo-sistemas.png → Logo Ingeniería de Sistemas (engranajes)
-  logo-datos-ia.png → Logo Ingeniería de Datos e IA (cerebro IDA · IA)
-  logo-mecanica.png → Logo Ingeniería Mecánica
+  banner-rally2.png     → Banner oficial (Rally de Ingenierías 2.0); en index: ?v=3 para evitar caché
+  banner-rally.png      → Copia/respaldo del mismo banner (opcional)
+  logo-mecanica.png     → Ingeniería Mecánica
+  logo-industrial.png   → Ingeniería Industrial
+  logo-sistemas.png     → Ingeniería de Sistemas (centro de la fila, 20% más grande con CSS)
+  logo-datos-ia.png     → Ingeniería de Datos e IA
+  logo-multimedia.png   → Multimedia
 
-Puede copiar los PNG que subió a Cursor desde la carpeta donde Cursor los guardó
-a esta carpeta (assets/images) y renombrarlos como arriba.
+Orden en la web (izquierda → derecha): mecánica, industrial, sistemas, datos-ia, multimedia.
+
 Si no hay imágenes, la página de bienvenida se ve igual pero sin banner ni logos.

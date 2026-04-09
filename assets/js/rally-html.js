@@ -1,13 +1,84 @@
 /**
- * Rally Estudiantil 2.0 - Lógica para versión HTML estática
- * Temporizador, juegos (Memorama, Quiz, Pistas, Reto), calificación y redirección a resultados
+ * Rally Estudiantil 2.0 - Lógica HTML estática
+ * Temporizador global por juego: máximo 3:00 (180000 ms), contador mm:ss en vivo
  */
 (function () {
   'use strict';
 
-  var tiempoInicio = null;
-  var intervalo = null;
-  var segundos = 0;
+  var RT = window.RALLY_TIEMPO;
+  if (!RT) {
+    console.error('rally-tiempo.js debe cargarse antes de rally-html.js');
+    return;
+  }
+
+  var TIEMPO_LIMITE_MS = 180000;
+
+  function mezclar(array) {
+    return array.sort(function () { return Math.random() - 0.5; });
+  }
+
+  /** Partida con al menos minTematicas categorías distintas (si hay datos). */
+  function seleccionarPartidaPorTematicas(originales, cantidad, minTematicas, categoriaDe) {
+    var norm = [];
+    for (var i = 0; i < originales.length; i++) {
+      var o = originales[i];
+      if (!o) continue;
+      var copia = {};
+      for (var k in o) {
+        if (Object.prototype.hasOwnProperty.call(o, k)) copia[k] = o[k];
+      }
+      copia._rallyIdx = i;
+      copia.categoria = categoriaDe(o);
+      norm.push(copia);
+    }
+    if (norm.length === 0) return [];
+    var cupo = Math.min(cantidad, norm.length);
+    var porCat = {};
+    for (var j = 0; j < norm.length; j++) {
+      var c = norm[j].categoria;
+      if (!porCat[c]) porCat[c] = [];
+      porCat[c].push(norm[j]);
+    }
+    var numCats = Object.keys(porCat).length;
+    minTematicas = Math.max(1, Math.min(minTematicas || 3, numCats));
+    var cats = Object.keys(porCat);
+    mezclar(cats);
+    var usadosIdx = {};
+    var elegidas = [];
+    function marcar(q) {
+      if (usadosIdx[q._rallyIdx]) return false;
+      usadosIdx[q._rallyIdx] = true;
+      elegidas.push(q);
+      return true;
+    }
+    var ci = 0;
+    while (elegidas.length < minTematicas && ci < cats.length) {
+      var bucket = porCat[cats[ci]];
+      mezclar(bucket);
+      if (bucket.length) marcar(bucket[0]);
+      ci++;
+    }
+    var resto = [];
+    for (var r = 0; r < norm.length; r++) {
+      if (!usadosIdx[norm[r]._rallyIdx]) resto.push(norm[r]);
+    }
+    mezclar(resto);
+    while (elegidas.length < cupo && resto.length) {
+      marcar(resto.shift());
+    }
+    if (elegidas.length < cupo) {
+      mezclar(norm);
+      for (var u = 0; u < norm.length && elegidas.length < cupo; u++) {
+        marcar(norm[u]);
+      }
+    }
+    mezclar(elegidas);
+    for (var e = 0; e < elegidas.length; e++) {
+      delete elegidas[e]._rallyIdx;
+    }
+    return elegidas;
+  }
+
   var params = new URLSearchParams(window.location.search);
   var tipo = params.get('tipo') || '';
   var categoriaId = params.get('categoria') || '';
@@ -23,44 +94,71 @@
   document.getElementById('nombre-equipo').textContent = equipo;
 
   function pad(n) { return n < 10 ? '0' + n : n; }
-  var MEMORAMA_TIEMPO_MAX = 180; /* 3 minutos máximo; al cumplirse pierden */
 
-  function actualizarTemporizador() {
-    if (tiempoInicio === null) return;
-    segundos = Math.floor((Date.now() - tiempoInicio) / 1000);
-    var el = document.getElementById('temporizador');
-    if (!el) return;
-    if (tipo === 'memorama') {
-      var restante = Math.max(0, MEMORAMA_TIEMPO_MAX - segundos);
-      el.textContent = pad(Math.floor(restante/60)) + ':' + pad(restante%60);
-      el.classList.toggle('urgente', restante <= 10 && restante > 0);
-      if (restante <= 0 && typeof onMemoramaTiempoCumplido === 'function') onMemoramaTiempoCumplido();
-    } else {
-      el.textContent = pad(Math.floor(segundos/60)) + ':' + pad(segundos%60);
+  function actualizarLeyendaLimite(ms) {
+    var ley = document.getElementById('timer-leyenda');
+    if (ley) {
+      ley.textContent = 'Límite: 3:00 — Restante: ' + RT.formatearTiempo(Math.max(0, TIEMPO_LIMITE_MS - ms));
     }
   }
-  function iniciarTemporizador() {
-    if (tiempoInicio !== null) return;
-    tiempoInicio = Date.now();
-    intervalo = setInterval(actualizarTemporizador, 200);
-    actualizarTemporizador();
-  }
-  function detenerTemporizador() { if (intervalo) clearInterval(intervalo); intervalo = null; actualizarTemporizador(); return segundos; }
 
-  var tiempoMaxPorJuego = { memorama: MEMORAMA_TIEMPO_MAX, quiz: 180, pistas: 240, reto: 120 };
-  function calcularCalificacion(tiempoSeg) {
-    var max = tiempoMaxPorJuego[tipo] || 300;
-    if (tiempoSeg <= 0) return 5.0;
-    var ratio = Math.min(1, tiempoSeg / max);
-    return Math.round(Math.max(1, Math.min(5, 5 - ratio * 4)) * 10) / 10;
-  }
-  function irAResultados() {
-    var t = detenerTemporizador();
-    var cal = calcularCalificacion(t);
-    window.location.href = 'resultados.html?tiempo=' + t + '&calificacion=' + cal;
+  function fijarLeyendaTemporal(texto) {
+    var ley = document.getElementById('timer-leyenda');
+    if (ley) ley.textContent = texto || '';
   }
 
-  function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  /** Partida superada: cronómetro ya detenido; tiempo mostrado en verde. */
+  function aplicarTemporizadorExito(msTranscurrido) {
+    var el = document.getElementById('temporizador');
+    if (el) {
+      el.classList.remove('urgente');
+      el.classList.remove('temporizador-limite');
+      el.classList.add('temporizador-exito');
+      el.textContent = RT.formatearTiempo(msTranscurrido);
+    }
+    fijarLeyendaTemporal('Completado — ' + RT.formatearTiempo(msTranscurrido));
+  }
+
+  /** Límite 3:00 alcanzado sin completar: 03:00 en rojo. */
+  function aplicarTemporizadorLimiteAlcanzado() {
+    var el = document.getElementById('temporizador');
+    if (el) {
+      el.classList.remove('urgente');
+      el.classList.remove('temporizador-exito');
+      el.classList.add('temporizador-limite');
+      el.textContent = RT.formatearTiempo(TIEMPO_LIMITE_MS);
+    }
+    fijarLeyendaTemporal('Tiempo agotado (3:00)');
+  }
+
+  function irAResultados(ms, perdido, maximo) {
+    var q = 'tiempo_ms=' + Math.round(ms);
+    if (perdido) q += '&perdido=1';
+    if (maximo) q += '&maximo=1';
+    window.location.href = 'resultados.html?' + q;
+  }
+
+  /**
+   * Aviso global al terminar (éxito o tiempo): bloquea interacción unos segundos;
+   * el temporizador permanece visible encima del overlay (zona superior sin cubrir).
+   */
+  function mostrarAvisoEstacionFinal() {
+    if (document.querySelector('.rally-estacion-final-overlay')) return;
+    var delayMs = 5000 + Math.floor(Math.random() * 3001);
+    var overlay = document.createElement('div');
+    overlay.className = 'rally-estacion-final-overlay';
+    overlay.setAttribute('role', 'alert');
+    overlay.setAttribute('aria-live', 'assertive');
+    overlay.innerHTML = '<div class="rally-estacion-final-inner"><p class="rally-estacion-final-texto">Juego finalizado. Dirígete a la siguiente estación.</p></div>';
+    document.body.appendChild(overlay);
+    setTimeout(function () {
+      overlay.classList.add('rally-estacion-final-salida');
+      setTimeout(function () {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      }, 480);
+    }, delayMs);
+  }
+
   var datos = window.RALLY_DATOS || {};
   var cont = document.getElementById('contenedor-juego');
   var catNombre = document.getElementById('nombre-categoria');
@@ -72,11 +170,9 @@
     }
     if (!cat) { window.location.href = 'seleccion-categoria.html?juego=memorama'; return; }
     catNombre.textContent = cat.nombre;
-    var leyenda = document.getElementById('timer-leyenda');
-    if (leyenda) leyenda.textContent = 'Límite: 3 minutos. Si se cumple el tiempo, se pierde.';
     var cartas = [];
     var parId = 0;
-    cat.pares.forEach(function(p) {
+    cat.pares.forEach(function (p) {
       cartas.push({ parId: parId, texto: p[0], tipo: 'a' });
       cartas.push({ parId: parId, texto: p[1], tipo: 'b' });
       parId++;
@@ -92,39 +188,57 @@
     var volteadas = [];
     var emparejados = 0;
     var juegoTerminado = false;
+    var limiteDisparado = false;
 
-    function onMemoramaTiempoCumplido() {
+    function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    var cronometro = RT.crearCronometroDisplay('temporizador', function (ms) {
+      if (juegoTerminado || limiteDisparado) return;
+      actualizarLeyendaLimite(ms);
+      if (ms >= TIEMPO_LIMITE_MS) {
+        limiteDisparado = true;
+        onMemoramaTiempoMaximo();
+      }
+    });
+
+    function onMemoramaTiempoMaximo() {
       if (juegoTerminado) return;
       juegoTerminado = true;
-      detenerTemporizador();
+      cronometro.stop();
+      aplicarTemporizadorLimiteAlcanzado();
+      var ms = TIEMPO_LIMITE_MS;
+      RT.guardarTiempoReto('memorama', ms);
       var msg = document.createElement('div');
       msg.className = 'memorama-mensaje-final';
-      msg.innerHTML = '<p class="memorama-tiempo-cumplido">⏱ Tiempo cumplido (3 min). No alcanzaste a completar todas las parejas.</p><p><button type="button" class="btn-rally" id="btn-ver-resultado-perdido">Ver resultado</button></p>';
+      msg.innerHTML = '<p style="color:#ff6b6b;font-weight:700;font-size:1.2rem;">Tiempo finalizado, reto no cumplido!</p><p><button type="button" class="btn-rally" id="btn-ver-resultado-limite">Ver resultado</button></p>';
       cont.appendChild(msg);
-      document.getElementById('btn-ver-resultado-perdido').addEventListener('click', function() {
-        window.location.href = 'resultados.html?tiempo=180&calificacion=1.0&perdido=1';
+      document.getElementById('btn-ver-resultado-limite').addEventListener('click', function () {
+        irAResultados(ms, true, true);
       });
     }
-    window.onMemoramaTiempoCumplido = onMemoramaTiempoCumplido;
 
     function onMemoramaCompletado() {
       if (juegoTerminado) return;
       juegoTerminado = true;
-      detenerTemporizador();
+      var ms = cronometro.stop();
+      aplicarTemporizadorExito(ms);
+      RT.guardarTiempoReto('memorama', ms);
       var msg = document.createElement('div');
       msg.className = 'memorama-mensaje-final memorama-completado';
-      msg.innerHTML = '<p class="memorama-completado-texto">¡Completado! Todas las parejas encontradas.</p><p class="memorama-completado-btn"><button type="button" class="btn-rally" id="btn-terminado">Terminado — Ver resultado</button></p>';
+      msg.innerHTML = '<p class="memorama-completado-texto">¡Reto completado exitosamente!</p><p class="memorama-completado-btn"><button type="button" class="btn-rally" id="btn-terminado">Terminado — Ver resultado</button></p>';
       cont.insertBefore(msg, grid);
-      document.getElementById('btn-terminado').addEventListener('click', irAResultados);
+      document.getElementById('btn-terminado').addEventListener('click', function () {
+        irAResultados(ms, false, false);
+      });
     }
 
-    cartas.forEach(function(carta, idx) {
+    cartas.forEach(function (carta, idx) {
       var div = document.createElement('div');
       div.className = 'carta-memorama';
       div.dataset.parId = carta.parId;
       div.dataset.numero = (idx + 1);
       div.innerHTML = '<span class="cara reves">' + (idx + 1) + '</span><span class="cara frente" style="display:none;">' + escapeHtml(carta.texto) + '</span>';
-      div.addEventListener('click', function() {
+      div.addEventListener('click', function () {
         if (div.classList.contains('volteada') || div.classList.contains('emparejado') || volteadas.length === 2 || juegoTerminado) return;
         div.classList.add('volteada');
         div.querySelector('.reves').style.display = 'none';
@@ -138,7 +252,7 @@
             volteadas = [];
             if (emparejados >= totalPares) setTimeout(onMemoramaCompletado, 400);
           } else {
-            setTimeout(function() {
+            setTimeout(function () {
               volteadas[0].el.classList.remove('volteada');
               volteadas[0].el.querySelector('.reves').style.display = 'flex';
               volteadas[0].el.querySelector('.frente').style.display = 'none';
@@ -153,28 +267,39 @@
       grid.appendChild(div);
     });
     cont.appendChild(grid);
-    iniciarTemporizador();
+    actualizarLeyendaLimite(0);
+    cronometro.start();
   }
 
   if (tipo === 'quiz') {
     catNombre.textContent = 'Quiz';
-    var leyendaQuiz = document.getElementById('timer-leyenda');
-    if (leyendaQuiz) leyendaQuiz.textContent = 'Límite: 3 minutos por pregunta. Si se cumple, esa pregunta obtiene 0.0 y se pasa a la siguiente.';
-    var preguntas = (datos.quiz || []).slice();
-    for (var p = preguntas.length - 1; p > 0; p--) { var rq = Math.floor(Math.random() * (p + 1)); var tq = preguntas[p]; preguntas[p] = preguntas[rq]; preguntas[rq] = tq; }
-    preguntas = preguntas.slice(0, 10);
-    var indice = 0;
-    var puntajesQuiz = [];
-    var tiempoTotalQuiz = 0;
-    var tiempoInicioPreg = null;
-    var intervaloQuiz = null;
-    var TIEMPO_MAX = 180;
-    var TIEMPO_REF = 60;
-    function puntajePorTiempo(seg) {
-      if (seg <= 0) return 5.0;
-      var ratio = Math.min(1, seg / TIEMPO_REF);
-      return Math.round(Math.max(1, Math.min(5, 5 - ratio * 4)) * 10) / 10;
+    var pool = seleccionarPartidaPorTematicas(datos.quiz || [], 10, 3, function (item) {
+      return (item && item.categoria) ? item.categoria : 'General';
+    }).filter(function (q) { return q && q.p && q.opciones && q.opciones.length; });
+    function envolverRonda(arrQ) {
+      return arrQ.map(function (q) { return { q: q, acierto: null }; });
     }
+    var ronda = envolverRonda(pool);
+    var totalOriginales = pool.length;
+    var numeroRonda = 1;
+    var indice = 0;
+    var tiempoInicioPreg = null;
+    var juegoTerminado = false;
+    var limiteDisparado = false;
+    var juegoQuizIniciado = false;
+    var esperandoAvance = false;
+
+    var cronometroJuego = RT.crearCronometroDisplay('temporizador', function (ms) {
+      if (juegoTerminado || limiteDisparado) return;
+      actualizarLeyendaLimite(ms);
+      var el = document.getElementById('temporizador');
+      if (el) el.classList.toggle('urgente', TIEMPO_LIMITE_MS - ms <= 10000 && TIEMPO_LIMITE_MS - ms > 0);
+      if (ms >= TIEMPO_LIMITE_MS) {
+        limiteDisparado = true;
+        terminarQuizPorLimite();
+      }
+    });
+
     var wrapper = document.createElement('div');
     wrapper.className = 'quiz-contenedor-flex';
     var panelIzq = document.createElement('div');
@@ -185,75 +310,122 @@
     panelIzq.appendChild(panel);
     var panelDer = document.createElement('div');
     panelDer.className = 'reto-panel-der';
-    panelDer.innerHTML = '<div class="reto-puntajes-panel"><h3>Puntajes obtenidos</h3><ul class="reto-puntajes-lista" id="quiz-puntajes-lista"></ul><p class="reto-tiempo-restante" id="quiz-tiempo-restante"></p></div>';
+    panelDer.innerHTML = '<div class="reto-tiempos-panel"><h3>Progreso del quiz</h3><ul class="reto-tiempos-lista" id="quiz-tiempos-lista"></ul><p class="reto-tiempo-restante" id="quiz-tiempo-restante"></p></div>';
     wrapper.appendChild(panelIzq);
     wrapper.appendChild(panelDer);
     cont.appendChild(wrapper);
     var preguntaEl = document.getElementById('quiz-pregunta');
     var opcionesEl = document.getElementById('quiz-opciones');
-    var puntajesListaEl = document.getElementById('quiz-puntajes-lista');
+    var tiemposListaEl = document.getElementById('quiz-tiempos-lista');
     var tiempoRestanteEl = document.getElementById('quiz-tiempo-restante');
     var temporizadorEl = document.getElementById('temporizador');
-    function agregarPuntajeALista(n, p, esTimeout, esIncorrecto) {
+
+    function bloquearPanelQuiz() {
+      panel.style.pointerEvents = 'none';
+      panel.style.opacity = '0.65';
+      panelDer.style.pointerEvents = 'none';
+    }
+
+    function logRondaResumen(correctas, total) {
       var li = document.createElement('li');
-      if (esTimeout) li.className = 'tiempo-cumplido';
-      if (esIncorrecto) li.className = 'incorrecto';
-      li.innerHTML = '<span class="numero">Pregunta ' + n + ':</span> <span class="puntaje">' + p.toFixed(1) + '</span>';
-      if (esTimeout) li.title = 'Tiempo cumplido (3 min)';
-      if (esIncorrecto) li.title = 'Respuesta incorrecta';
-      puntajesListaEl.appendChild(li);
+      li.innerHTML = '<span class="numero">Ronda ' + numeroRonda + ':</span> <span class="valor-tiempo">' + correctas + ' / ' + total + ' bien</span>';
+      tiemposListaEl.appendChild(li);
     }
-    function pasarASiguienteConCero() {
-      if (intervaloQuiz) { clearInterval(intervaloQuiz); intervaloQuiz = null; }
-      tiempoTotalQuiz += TIEMPO_MAX;
-      puntajesQuiz.push(0);
-      agregarPuntajeALista(puntajesQuiz.length, 0, true, false);
-      indice++;
-      setTimeout(mostrarPregunta, 600);
+
+    function finalizarJuegoExitoso() {
+      if (juegoTerminado) return;
+      juegoTerminado = true;
+      var msTotal = cronometroJuego.stop();
+      aplicarTemporizadorExito(msTotal);
+      RT.guardarTiempoReto('quiz', msTotal);
+      bloquearPanelQuiz();
+      var msg = document.createElement('div');
+      msg.className = 'memorama-mensaje-final memorama-completado';
+      msg.style.marginTop = '16px';
+      msg.innerHTML = '<p class="memorama-completado-texto">¡Reto completado exitosamente!</p><p class="quiz-tiempo-final-exito" style="font-size:1.35rem;color:var(--secondary);margin:12px 0;">Tiempo invertido: ' + RT.formatearTiempo(msTotal) + '</p><p><a href="seleccion-juego.html" class="btn-rally">Elegir otro juego</a></p>';
+      cont.appendChild(msg);
+      mostrarAvisoEstacionFinal();
     }
-    function evaluarRespuesta(valorSeleccionado) {
-      if (intervaloQuiz) { clearInterval(intervaloQuiz); intervaloQuiz = null; }
-      var q = preguntas[indice];
-      var seg = tiempoInicioPreg ? (Date.now() - tiempoInicioPreg) / 1000 : 0;
-      tiempoTotalQuiz += seg;
-      var correcta = (q.correcta !== undefined && parseInt(valorSeleccionado, 10) === q.correcta);
-      if (correcta) {
-        var puntaje = puntajePorTiempo(seg);
-        puntajesQuiz.push(puntaje);
-        agregarPuntajeALista(puntajesQuiz.length, puntaje, false, false);
-      } else {
-        puntajesQuiz.push(0);
-        agregarPuntajeALista(puntajesQuiz.length, 0, false, true);
-      }
-      indice++;
-      setTimeout(mostrarPregunta, 600);
+
+    function terminarQuizPorLimite() {
+      if (juegoTerminado) return;
+      juegoTerminado = true;
+      cronometroJuego.stop();
+      aplicarTemporizadorLimiteAlcanzado();
+      var ms = TIEMPO_LIMITE_MS;
+      RT.guardarTiempoReto('quiz', ms);
+      bloquearPanelQuiz();
+      var msg = document.createElement('div');
+      msg.className = 'memorama-mensaje-final';
+      msg.style.marginTop = '16px';
+      msg.innerHTML = '<p style="color:#ff6b6b;font-weight:700;font-size:1.25rem;">Tiempo finalizado, reto no cumplido!</p><p class="mt-2"><a href="seleccion-juego.html" class="btn-rally outline">Volver a juegos</a></p>';
+      cont.appendChild(msg);
+      mostrarAvisoEstacionFinal();
     }
-    function mostrarPregunta() {
-      if (intervaloQuiz) { clearInterval(intervaloQuiz); intervaloQuiz = null; }
-      if (temporizadorEl) temporizadorEl.classList.remove('urgente');
-      if (indice >= preguntas.length) {
-        var promedio = puntajesQuiz.length ? puntajesQuiz.reduce(function(a,b){return a+b;},0) / puntajesQuiz.length : 0;
-        promedio = Math.round(Math.max(0, Math.min(5, promedio)) * 10) / 10;
-        window.location.href = 'resultados.html?tiempo=' + Math.round(tiempoTotalQuiz) + '&calificacion=' + promedio;
+
+    function cerrarRondaYContinuar() {
+      if (juegoTerminado) return;
+      var total = ronda.length;
+      var correctas = ronda.filter(function (x) { return x.acierto === true; }).length;
+      logRondaResumen(correctas, total);
+      var fallos = ronda.filter(function (x) { return x.acierto !== true; });
+      if (fallos.length === 0) {
+        finalizarJuegoExitoso();
         return;
       }
+      numeroRonda++;
+      ronda = fallos.map(function (x) { return { q: x.q, acierto: null }; });
+      indice = 0;
+      mostrarPregunta();
+    }
+
+    function evaluarRespuesta(valorSeleccionado) {
+      if (juegoTerminado || esperandoAvance) return;
+      if (valorSeleccionado === undefined || valorSeleccionado === '') return;
+      var item = ronda[indice];
+      if (!item || !item.q) return;
+      var q = item.q;
+      var sel = parseInt(valorSeleccionado, 10);
+      if (isNaN(sel)) return;
+      var esCorrecta = (q.correcta !== undefined && sel === q.correcta);
+      item.acierto = esCorrecta;
+      esperandoAvance = true;
+      opcionesEl.classList.add('quiz-opciones-bloqueadas');
+      var labels = opcionesEl.querySelectorAll('label');
+      labels.forEach(function (lab, i) {
+        var inp = lab.querySelector('input');
+        if (inp) inp.disabled = true;
+        if (i !== sel) return;
+        lab.classList.add(esCorrecta ? 'quiz-feedback-correcto' : 'quiz-feedback-incorrecto');
+      });
+      setTimeout(function () {
+        esperandoAvance = false;
+        if (juegoTerminado) return;
+        indice++;
+        if (indice >= ronda.length) cerrarRondaYContinuar();
+        else mostrarPregunta();
+      }, 1300);
+    }
+
+    function mostrarPregunta() {
+      if (juegoTerminado) return;
+      opcionesEl.classList.remove('quiz-opciones-bloqueadas');
+      if (temporizadorEl) temporizadorEl.classList.remove('urgente');
+      if (tiempoRestanteEl) {
+        tiempoRestanteEl.textContent = 'Ronda ' + numeroRonda + ' · ' + (indice + 1) + '/' + ronda.length + ' en esta ronda · Meta: ' + totalOriginales + ' preguntas bien · Mismo límite 3:00.';
+      }
+      if (indice >= ronda.length) return;
+      if (!juegoQuizIniciado) {
+        actualizarLeyendaLimite(0);
+        cronometroJuego.start();
+        juegoQuizIniciado = true;
+      }
       tiempoInicioPreg = Date.now();
-      intervaloQuiz = setInterval(function() {
-        var seg = Math.floor((Date.now() - tiempoInicioPreg) / 1000);
-        var restante = Math.max(0, TIEMPO_MAX - seg);
-        if (temporizadorEl) {
-          temporizadorEl.textContent = pad(Math.floor(restante/60)) + ':' + pad(restante%60);
-          temporizadorEl.classList.toggle('urgente', restante <= 10 && restante > 0);
-        }
-        if (seg >= TIEMPO_MAX) pasarASiguienteConCero();
-        else if (tiempoRestanteEl) tiempoRestanteEl.textContent = 'Tiempo: ' + pad(Math.floor(restante/60)) + ':' + pad(restante%60) + ' / 3:00';
-      }, 200);
-      if (temporizadorEl) temporizadorEl.textContent = '03:00';
-      if (tiempoRestanteEl) tiempoRestanteEl.textContent = 'Tiempo: 3:00 / 3:00';
-      var q = preguntas[indice];
-      preguntaEl.textContent = (indice + 1) + '. ' + q.p;
+      var item = ronda[indice];
+      var q = item.q;
+      preguntaEl.textContent = 'Ronda ' + numeroRonda + ' — ' + (indice + 1) + '/' + ronda.length + ': ' + q.p;
       opcionesEl.innerHTML = '';
-      q.opciones.forEach(function(op, i) {
+      q.opciones.forEach(function (op, i) {
         var label = document.createElement('label');
         var radio = document.createElement('input');
         radio.type = 'radio'; radio.name = 'quiz_opcion'; radio.value = i;
@@ -262,47 +434,52 @@
         opcionesEl.appendChild(label);
       });
     }
-    opcionesEl.addEventListener('change', function(ev) {
+
+    opcionesEl.addEventListener('change', function (ev) {
+      if (juegoTerminado || esperandoAvance) return;
       if (ev.target.type === 'radio' && ev.target.value !== undefined && ev.target.value !== '') evaluarRespuesta(ev.target.value);
     });
-    mostrarPregunta();
+    if (ronda.length === 0) {
+      juegoTerminado = true;
+    } else {
+      mostrarPregunta();
+    }
   }
 
   if (tipo === 'pistas') {
     catNombre.textContent = 'Pistas';
-    var leyendaPistas = document.getElementById('timer-leyenda');
-    if (leyendaPistas) leyendaPistas.textContent = 'Límite: 5 minutos total para todo el juego. Pedir pista resta 40% del puntaje. Saltar = 0.0.';
-    var pistas = (datos.pistas || []).slice();
-    for (var sp = pistas.length - 1; sp > 0; sp--) {
-      var rp = Math.floor(Math.random() * (sp + 1));
-      var tp = pistas[sp]; pistas[sp] = pistas[rp]; pistas[rp] = tp;
-    }
-    pistas = pistas.slice(0, 10);
+    var pistas = seleccionarPartidaPorTematicas(datos.pistas || [], 10, 3, function (item) {
+      return (item && item.categoria) ? item.categoria : 'General';
+    }).filter(function (p) { return p && p.pista && p.respuesta; });
     var idx = 0;
     var usadoPista = false;
-    var puntajesPistas = [];
-    var tiempoTotalPistas = 0;
     var tiempoInicioPista = null;
-    var tiempoRestanteTotal = 300;
-    var intervaloPistas = null;
-    var TIEMPO_TOTAL_JUEGO = 300;
-    var TIEMPO_REF = 60;
-    function puntajePorTiempo(seg) {
-      if (seg <= 0) return 5.0;
-      var ratio = Math.min(1, seg / TIEMPO_REF);
-      return Math.round(Math.max(1, Math.min(5, 5 - ratio * 4)) * 10) / 10;
-    }
+    var juegoPistasTerminado = false;
+    var limiteDisparado = false;
+    var juegoPistasIniciado = false;
+
+    var cronometroJuego = RT.crearCronometroDisplay('temporizador', function (ms) {
+      if (juegoPistasTerminado || limiteDisparado) return;
+      actualizarLeyendaLimite(ms);
+      var el = document.getElementById('temporizador');
+      if (el) el.classList.toggle('urgente', TIEMPO_LIMITE_MS - ms <= 10000 && TIEMPO_LIMITE_MS - ms > 0);
+      if (ms >= TIEMPO_LIMITE_MS) {
+        limiteDisparado = true;
+        terminarPistasPorLimite();
+      }
+    });
+
     var wrapper = document.createElement('div');
     wrapper.className = 'pistas-contenedor-flex';
     var panelIzq = document.createElement('div');
     panelIzq.className = 'reto-panel-izq';
     var panel = document.createElement('div');
     panel.className = 'panel-rally';
-    panel.innerHTML = '<p class="pista-texto" id="pista-texto"></p><p class="pista-indicio" id="pista-indicio" style="display:none;margin-top:12px;padding:12px;background:rgba(0,80,120,0.4);border-left:4px solid var(--secondary);border-radius:0 8px 8px 0;font-size:1rem;color:var(--secondary);"></p><div class="text-center"><input type="text" class="pista-input" id="pista-respuesta" placeholder="Escribe tu respuesta..." autocomplete="off"><p class="mt-2"><button type="button" class="btn-rally" id="pista-verificar">Verificar</button> <button type="button" class="btn-rally outline" id="pista-pedir-pista" style="margin-left:8px;">Pedir pista (-40%)</button> <button type="button" class="btn-rally outline" id="pista-saltar">Saltar (0.0)</button></p></div>';
+    panel.innerHTML = '<p class="pista-texto" id="pista-texto"></p><p class="pista-indicio" id="pista-indicio" style="display:none;margin-top:12px;padding:12px;background:rgba(0,80,120,0.4);border-left:4px solid var(--secondary);border-radius:0 8px 8px 0;font-size:1rem;color:var(--secondary);"></p><div class="text-center"><input type="text" class="pista-input" id="pista-respuesta" placeholder="Escribe tu respuesta..." autocomplete="off"><p class="mt-2"><button type="button" class="btn-rally" id="pista-verificar">Verificar</button> <button type="button" class="btn-rally outline" id="pista-pedir-pista" style="margin-left:8px;">Pedir pista</button> <button type="button" class="btn-rally outline" id="pista-saltar">Saltar</button></p></div>';
     panelIzq.appendChild(panel);
     var panelDer = document.createElement('div');
     panelDer.className = 'reto-panel-der';
-    panelDer.innerHTML = '<div class="reto-puntajes-panel"><h3>Puntajes obtenidos</h3><ul class="reto-puntajes-lista" id="pistas-puntajes-lista"></ul><p class="reto-tiempo-restante" id="pistas-tiempo-restante"></p></div>';
+    panelDer.innerHTML = '<div class="reto-tiempos-panel"><h3>Tiempos por acertijo</h3><ul class="reto-tiempos-lista" id="pistas-tiempos-lista"></ul><p class="reto-tiempo-restante" id="pistas-tiempo-restante"></p></div>';
     wrapper.appendChild(panelIzq);
     wrapper.appendChild(panelDer);
     cont.appendChild(wrapper);
@@ -312,223 +489,439 @@
     var btn = document.getElementById('pista-verificar');
     var btnPista = document.getElementById('pista-pedir-pista');
     var btnSaltar = document.getElementById('pista-saltar');
-    var puntajesListaEl = document.getElementById('pistas-puntajes-lista');
+    var tiemposListaEl = document.getElementById('pistas-tiempos-lista');
     var tiempoRestanteEl = document.getElementById('pistas-tiempo-restante');
     var temporizadorEl = document.getElementById('temporizador');
-    var juegoPistasTerminado = false;
-    function normalizar(s) { return (s||'').toLowerCase().replace(/\s+/g,' ').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
-    function agregarPuntajeALista(n, p, esTimeout) {
+
+    function normalizarTexto(texto) {
+      return (texto || '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function agregarTiempoALista(n, ms) {
       var li = document.createElement('li');
-      if (esTimeout) li.className = 'tiempo-cumplido';
-      li.innerHTML = '<span class="numero">Acertijo ' + n + ':</span> <span class="puntaje">' + p.toFixed(1) + '</span>';
-      if (esTimeout) li.title = 'Tiempo cumplido';
-      puntajesListaEl.appendChild(li);
+      li.innerHTML = '<span class="numero">Acertijo ' + n + ':</span> <span class="valor-tiempo">' + RT.formatearTiempo(ms) + '</span>';
+      tiemposListaEl.appendChild(li);
     }
-    function actualizarPromedio() {
-      if (puntajesPistas.length > 0 && tiempoRestanteEl) {
-        var promSeg = Math.round((tiempoTotalPistas / puntajesPistas.length) * 10) / 10;
-        tiempoRestanteEl.textContent = 'Promedio por pregunta: ' + promSeg + ' seg';
-      } else if (tiempoRestanteEl) {
-        tiempoRestanteEl.textContent = 'Promedio por pregunta: —';
-      }
+
+    function bloquearPanelPistas() {
+      wrapper.style.pointerEvents = 'none';
+      wrapper.style.opacity = '0.65';
     }
-    function terminarJuegoPistas() {
+
+    function terminarPistasPorLimite() {
       if (juegoPistasTerminado) return;
       juegoPistasTerminado = true;
-      if (intervaloPistas) { clearInterval(intervaloPistas); intervaloPistas = null; }
-      while (idx < pistas.length) {
-        puntajesPistas.push(0);
-        agregarPuntajeALista(puntajesPistas.length, 0, true);
-        idx++;
-      }
-      var promedio = puntajesPistas.length ? puntajesPistas.reduce(function(a,b){return a+b;},0) / puntajesPistas.length : 0;
-      promedio = Math.round(Math.max(0, Math.min(5, promedio)) * 10) / 10;
-      window.location.href = 'resultados.html?tiempo=' + Math.round(tiempoTotalPistas) + '&calificacion=' + promedio;
+      cronometroJuego.stop();
+      aplicarTemporizadorLimiteAlcanzado();
+      var ms = TIEMPO_LIMITE_MS;
+      RT.guardarTiempoReto('pistas', ms);
+      bloquearPanelPistas();
+      var msg = document.createElement('div');
+      msg.className = 'memorama-mensaje-final';
+      msg.style.marginTop = '16px';
+      msg.innerHTML = '<p style="color:#ff6b6b;font-weight:700;font-size:1.2rem;">Tiempo finalizado, reto no cumplido!</p><p><button type="button" class="btn-rally" id="btn-pistas-limite">Ver resultado</button></p>';
+      cont.appendChild(msg);
+      document.getElementById('btn-pistas-limite').addEventListener('click', function () {
+        irAResultados(ms, true, true);
+      });
+      mostrarAvisoEstacionFinal();
     }
+
+    function finalizarPistasExitoso() {
+      if (juegoPistasTerminado) return;
+      juegoPistasTerminado = true;
+      var msTotal = cronometroJuego.stop();
+      aplicarTemporizadorExito(msTotal);
+      RT.guardarTiempoReto('pistas', msTotal);
+      bloquearPanelPistas();
+      var msg = document.createElement('div');
+      msg.className = 'memorama-mensaje-final memorama-completado';
+      msg.style.marginTop = '16px';
+      msg.innerHTML = '<p class="memorama-completado-texto">¡Reto completado exitosamente!</p><p><button type="button" class="btn-rally" id="btn-pistas-exito">Ver resultado</button></p>';
+      cont.appendChild(msg);
+      document.getElementById('btn-pistas-exito').addEventListener('click', function () {
+        irAResultados(msTotal, false, false);
+      });
+      mostrarAvisoEstacionFinal();
+    }
+
     function mostrarPista() {
+      if (juegoPistasTerminado) return;
       if (btnPista) btnPista.disabled = false;
+      if (tiempoRestanteEl) tiempoRestanteEl.textContent = 'Límite total de sesión: 3:00.';
       if (idx >= pistas.length) {
-        var promedio = puntajesPistas.length ? puntajesPistas.reduce(function(a,b){return a+b;},0) / puntajesPistas.length : 0;
-        promedio = Math.round(Math.max(0, Math.min(5, promedio)) * 10) / 10;
-        window.location.href = 'resultados.html?tiempo=' + Math.round(tiempoTotalPistas) + '&calificacion=' + promedio;
+        finalizarPistasExitoso();
         return;
+      }
+      if (!juegoPistasIniciado) {
+        actualizarLeyendaLimite(0);
+        cronometroJuego.start();
+        juegoPistasIniciado = true;
       }
       tiempoInicioPista = Date.now();
       usadoPista = false;
       indicioEl.style.display = 'none';
       indicioEl.textContent = '';
-      if (!intervaloPistas) {
-        window._pistasInicioJuego = Date.now();
-        intervaloPistas = setInterval(function() {
-          if (juegoPistasTerminado) return;
-          tiempoRestanteTotal = Math.max(0, TIEMPO_TOTAL_JUEGO - Math.floor((Date.now() - window._pistasInicioJuego) / 1000));
-          if (temporizadorEl) {
-            temporizadorEl.textContent = pad(Math.floor(tiempoRestanteTotal/60)) + ':' + pad(tiempoRestanteTotal%60);
-            temporizadorEl.classList.toggle('urgente', tiempoRestanteTotal <= 10 && tiempoRestanteTotal > 0);
-          }
-          actualizarPromedio();
-          if (tiempoRestanteTotal <= 0) terminarJuegoPistas();
-        }, 200);
-      }
-      tiempoRestanteTotal = Math.max(0, TIEMPO_TOTAL_JUEGO - Math.floor((Date.now() - window._pistasInicioJuego) / 1000));
-      if (temporizadorEl) temporizadorEl.textContent = pad(Math.floor(tiempoRestanteTotal/60)) + ':' + pad(tiempoRestanteTotal%60);
-      actualizarPromedio();
       textoEl.textContent = pistas[idx].pista;
       inputEl.value = '';
       inputEl.focus();
     }
+
     function saltarPregunta() {
-      puntajesPistas.push(0);
-      agregarPuntajeALista(puntajesPistas.length, 0, true);
+      if (juegoPistasTerminado) return;
+      var ms = tiempoInicioPista ? (Date.now() - tiempoInicioPista) : 0;
+      agregarTiempoALista(idx + 1, ms);
       idx++;
-      setTimeout(mostrarPista, 600);
+      setTimeout(mostrarPista, 400);
     }
+
     btnSaltar.addEventListener('click', saltarPregunta);
-    btnPista.addEventListener('click', function() {
+    btnPista.addEventListener('click', function () {
       if (usadoPista) return;
       usadoPista = true;
       indicioEl.textContent = '💡 Indicio: ' + (pistas[idx].indicio || 'No hay indicio disponible.');
       indicioEl.style.display = 'block';
       btnPista.disabled = true;
     });
-    btn.addEventListener('click', function() {
-      if (normalizar(inputEl.value) === normalizar(pistas[idx].respuesta)) {
-        var seg = tiempoInicioPista ? (Date.now() - tiempoInicioPista) / 1000 : 0;
-        tiempoTotalPistas += seg;
-        var puntaje = puntajePorTiempo(seg);
-        if (usadoPista) puntaje = Math.round(puntaje * 0.6 * 10) / 10;
-        puntajesPistas.push(puntaje);
-        agregarPuntajeALista(puntajesPistas.length, puntaje, false);
+    btn.addEventListener('click', function () {
+      if (juegoPistasTerminado) return;
+      var usuarioNorm = normalizarTexto(inputEl.value);
+      if (!usuarioNorm) {
+        inputEl.style.borderColor = '#ff6b6b';
+        setTimeout(function () { inputEl.style.borderColor = ''; }, 800);
+        return;
+      }
+      if (usuarioNorm === normalizarTexto(pistas[idx].respuesta)) {
+        var ms = tiempoInicioPista ? (Date.now() - tiempoInicioPista) : 0;
+        agregarTiempoALista(idx + 1, ms);
         idx++;
-        setTimeout(mostrarPista, 600);
-      } else { inputEl.style.borderColor = '#ff6b6b'; setTimeout(function() { inputEl.style.borderColor = ''; }, 1000); }
+        setTimeout(mostrarPista, 400);
+      } else { inputEl.style.borderColor = '#ff6b6b'; setTimeout(function () { inputEl.style.borderColor = ''; }, 1000); }
     });
-    inputEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') btn.click(); });
-    mostrarPista();
+    inputEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') btn.click(); });
+    if (!pistas.length) {
+      var sinP = document.createElement('p');
+      sinP.className = 'text-center';
+      sinP.style.color = 'var(--primary)';
+      sinP.textContent = 'No hay pistas disponibles.';
+      cont.appendChild(sinP);
+    } else {
+      mostrarPista();
+    }
   }
 
   if (tipo === 'reto') {
     catNombre.textContent = 'Reto';
-    var leyendaReto = document.getElementById('timer-leyenda');
-    if (leyendaReto) leyendaReto.textContent = 'Límite: 3 minutos por prueba. Si se cumple, esa prueba obtiene 0.0 y se pasa a la siguiente.';
-    var retos = (datos.reto || []).filter(function(r) { return r.items && r.orden_correcto; });
-    for (var sr = retos.length - 1; sr > 0; sr--) {
-      var rr = Math.floor(Math.random() * (sr + 1));
-      var tr = retos[sr]; retos[sr] = retos[rr]; retos[rr] = tr;
+
+    function claveOrdenRetoItem(item, indice) {
+      if (item && typeof item === 'object' && !Array.isArray(item)) {
+        if (item.clave != null && !isNaN(Number(item.clave))) return Number(item.clave);
+        if (item.anio != null && !isNaN(Number(item.anio))) {
+          var a = Number(item.anio);
+          var o = Number(item.orden);
+          if (!isNaN(o) && o !== 0) return a * 10000 + o;
+          return a;
+        }
+        if (item.orden != null && !isNaN(Number(item.orden))) return Number(item.orden);
+      }
+      return indice;
     }
-    var retoIdx = 0;
-    var puntajesRetos = [];
-    var tiempoTotalRetos = 0;
+
+    function normalizarRetoCR(r) {
+      if (!r) return null;
+      var titulo = r.pregunta || r.titulo;
+      var pasos = [];
+      if (r.respuestaCorrecta && Array.isArray(r.respuestaCorrecta) && r.respuestaCorrecta.length) {
+        var arr = r.respuestaCorrecta;
+        for (var i = 0; i < arr.length; i++) {
+          var raw = arr[i];
+          if (raw !== null && typeof raw === 'object' && !Array.isArray(raw)) {
+            var vis = raw.texto != null ? String(raw.texto).trim() : (raw.t != null ? String(raw.t).trim() : '');
+            if (!vis) return null;
+            pasos.push({ visible: vis, clave: claveOrdenRetoItem(raw, i) });
+          } else {
+            var s = String(raw).trim();
+            if (!s) return null;
+            pasos.push({ visible: s, clave: i });
+          }
+        }
+      } else if (r.items && r.orden_correcto && r.orden_correcto.length) {
+        for (var oi = 0; oi < r.orden_correcto.length; oi++) {
+          pasos.push({ visible: String(r.items[r.orden_correcto[oi]]).trim(), clave: oi });
+        }
+      }
+      if (!titulo || !pasos.length) return null;
+      return {
+        titulo: titulo,
+        pasos: pasos,
+        clavesCorrectas: pasos.map(function (p) { return p.clave; }),
+        categoria: r.categoria || 'General'
+      };
+    }
+
+    var RETOS_POR_PARTIDA = 6;
+
+    var retosNorm = [];
+    var rawRetos = datos.reto || [];
+    for (var ri = 0; ri < rawRetos.length; ri++) {
+      var nrm = normalizarRetoCR(rawRetos[ri]);
+      if (nrm) retosNorm.push(nrm);
+    }
+    var loteRetos = mezclar(retosNorm.slice()).slice(0, Math.min(RETOS_POR_PARTIDA, retosNorm.length));
+    var completadosLote = 0;
     var tiempoInicioReto = null;
-    var intervaloReto = null;   /* intervalo del límite 3 min por prueba */
-    var TIEMPO_MAX_PRUEBA = 180; /* 3 minutos por prueba */
-    var TIEMPO_REF_RETO = 60;
-    function puntajePorTiempo(segundos) {
-      if (segundos <= 0) return 5.0;
-      var ratio = Math.min(1, segundos / TIEMPO_REF_RETO);
-      return Math.round(Math.max(1, Math.min(5, 5 - ratio * 4)) * 10) / 10;
-    }
+    var juegoRetoTerminado = false;
+    var limiteDisparado = false;
+    var juegoRetoIniciado = false;
+    var dragoverRetoRegistrado = false;
+
+    var cronometroJuego = RT.crearCronometroDisplay('temporizador', function (ms) {
+      if (juegoRetoTerminado || limiteDisparado) return;
+      actualizarLeyendaLimite(ms);
+      var el = document.getElementById('temporizador');
+      if (el) el.classList.toggle('urgente', TIEMPO_LIMITE_MS - ms <= 10000 && TIEMPO_LIMITE_MS - ms > 0);
+      if (ms >= TIEMPO_LIMITE_MS) {
+        limiteDisparado = true;
+        terminarRetoPorLimite();
+      }
+    });
+
     var wrapper = document.createElement('div');
     wrapper.className = 'reto-contenedor-flex';
     var panelIzq = document.createElement('div');
     panelIzq.className = 'reto-panel-izq';
     var panel = document.createElement('div');
     panel.className = 'panel-rally';
-    panel.innerHTML = '<h2 id="reto-titulo"></h2><ul class="reto-lista" id="reto-lista"></ul><p class="text-center mt-2"><button type="button" class="btn-rally" id="reto-verificar">Verificar orden</button></p>';
+    panel.innerHTML = '<h2 id="reto-titulo"></h2><p class="reto-progreso-lote" id="reto-progreso-lote" aria-live="polite">Retos completados: 0 / 6</p><p id="reto-feedback" class="reto-feedback" aria-live="polite"></p><ul class="reto-lista" id="reto-lista"></ul><p class="text-center mt-2"><button type="button" class="btn-rally" id="reto-verificar">Verificar orden</button></p>';
     panelIzq.appendChild(panel);
     var panelDer = document.createElement('div');
     panelDer.className = 'reto-panel-der';
-    panelDer.innerHTML = '<div class="reto-puntajes-panel"><h3>Puntajes obtenidos</h3><ul class="reto-puntajes-lista" id="reto-puntajes-lista"></ul><p class="reto-tiempo-restante" id="reto-tiempo-restante"></p></div>';
+    panelDer.innerHTML = '<div class="reto-tiempos-panel"><h3>Retos resueltos</h3><ul class="reto-tiempos-lista" id="reto-tiempos-lista"></ul><p class="reto-tiempo-restante" id="reto-tiempo-restante"></p></div>';
     wrapper.appendChild(panelIzq);
     wrapper.appendChild(panelDer);
     cont.appendChild(wrapper);
     var tituloEl = document.getElementById('reto-titulo');
+    var progresoRetoEl = document.getElementById('reto-progreso-lote');
+    var feedbackRetoEl = document.getElementById('reto-feedback');
     var listaEl = document.getElementById('reto-lista');
     var btnReto = document.getElementById('reto-verificar');
-    var puntajesListaEl = document.getElementById('reto-puntajes-lista');
+    var tiemposListaEl = document.getElementById('reto-tiempos-lista');
     var tiempoRestanteEl = document.getElementById('reto-tiempo-restante');
     var temporizadorEl = document.getElementById('temporizador');
-    function agregarPuntajeALista(numeroPrueba, puntaje, esTiempoCumplido) {
+
+    function agregarTiempoALista(numeroPrueba, ms) {
       var li = document.createElement('li');
-      if (esTiempoCumplido) li.className = 'tiempo-cumplido';
-      li.innerHTML = '<span class="numero">Prueba ' + numeroPrueba + ':</span> <span class="puntaje">' + puntaje.toFixed(1) + '</span>';
-      if (esTiempoCumplido) li.title = 'Tiempo cumplido (3 min)';
-      puntajesListaEl.appendChild(li);
+      li.innerHTML = '<span class="numero">Reto ' + numeroPrueba + ':</span> <span class="valor-tiempo">' + RT.formatearTiempo(ms) + '</span>';
+      tiemposListaEl.appendChild(li);
     }
-    function pasarASiguienteConCero() {
-      if (intervaloReto) { clearInterval(intervaloReto); intervaloReto = null; }
-      tiempoTotalRetos += TIEMPO_MAX_PRUEBA;
-      puntajesRetos.push(0);
-      agregarPuntajeALista(puntajesRetos.length, 0, true);
-      retoIdx++;
-      setTimeout(mostrarReto, 600);
+
+    function bloquearRetoUI() {
+      wrapper.style.pointerEvents = 'none';
+      wrapper.style.opacity = '0.72';
     }
+
+    function finalizarRetoExitoso() {
+      if (juegoRetoTerminado) return;
+      juegoRetoTerminado = true;
+      var msTotal = cronometroJuego.stop();
+      aplicarTemporizadorExito(msTotal);
+      RT.guardarTiempoReto('reto', msTotal);
+      bloquearRetoUI();
+      var msg = document.createElement('div');
+      msg.className = 'memorama-mensaje-final memorama-completado';
+      msg.style.marginTop = '16px';
+      msg.innerHTML = '<p class="memorama-completado-texto">¡Reto completado exitosamente!</p><p><button type="button" class="btn-rally" id="btn-reto-exito">Ver resultado</button></p>';
+      cont.appendChild(msg);
+      document.getElementById('btn-reto-exito').addEventListener('click', function () {
+        irAResultados(msTotal, false, false);
+      });
+      mostrarAvisoEstacionFinal();
+    }
+
+    function terminarRetoPorLimite() {
+      if (juegoRetoTerminado) return;
+      juegoRetoTerminado = true;
+      cronometroJuego.stop();
+      aplicarTemporizadorLimiteAlcanzado();
+      var ms = TIEMPO_LIMITE_MS;
+      RT.guardarTiempoReto('reto', ms);
+      bloquearRetoUI();
+      var msg = document.createElement('div');
+      msg.className = 'memorama-mensaje-final';
+      msg.style.marginTop = '16px';
+      msg.innerHTML = '<p style="color:#ff6b6b;font-weight:700;font-size:1.2rem;">Tiempo finalizado, reto no cumplido!</p><p><button type="button" class="btn-rally" id="btn-reto-limite">Ver resultado</button></p>';
+      cont.appendChild(msg);
+      document.getElementById('btn-reto-limite').addEventListener('click', function () {
+        irAResultados(ms, true, true);
+      });
+      mostrarAvisoEstacionFinal();
+    }
+
     function mostrarReto() {
-      if (intervaloReto) { clearInterval(intervaloReto); intervaloReto = null; }
+      if (juegoRetoTerminado) return;
       if (temporizadorEl) temporizadorEl.classList.remove('urgente');
-      if (retoIdx >= retos.length) {
-        var promedio = puntajesRetos.length ? puntajesRetos.reduce(function(a, b) { return a + b; }, 0) / puntajesRetos.length : 0;
-        promedio = Math.round(Math.max(0, Math.min(5, promedio)) * 10) / 10;
-        window.location.href = 'resultados.html?tiempo=' + Math.round(tiempoTotalRetos) + '&calificacion=' + promedio;
+      if (!loteRetos.length) {
+        juegoRetoTerminado = true;
+        if (feedbackRetoEl) feedbackRetoEl.textContent = 'No hay retos configurados.';
         return;
       }
+      if (progresoRetoEl) {
+        progresoRetoEl.textContent = 'Retos completados: ' + completadosLote + ' / ' + loteRetos.length;
+      }
+      if (tiempoRestanteEl) {
+        tiempoRestanteEl.textContent = 'Partida: ' + loteRetos.length + ' retos · Límite: 3:00.';
+      }
+      var prueba = loteRetos[completadosLote];
+      if (!prueba) {
+        juegoRetoTerminado = true;
+        if (feedbackRetoEl) feedbackRetoEl.textContent = 'No hay retos configurados.';
+        return;
+      }
+      if (!juegoRetoIniciado) {
+        actualizarLeyendaLimite(0);
+        cronometroJuego.start();
+        juegoRetoIniciado = true;
+      }
       tiempoInicioReto = Date.now();
-      intervaloReto = setInterval(function() {
-        var seg = Math.floor((Date.now() - tiempoInicioReto) / 1000);
-        var restante = Math.max(0, TIEMPO_MAX_PRUEBA - seg);
-        if (temporizadorEl) {
-          temporizadorEl.textContent = pad(Math.floor(restante/60)) + ':' + pad(restante%60);
-          temporizadorEl.classList.toggle('urgente', restante <= 10 && restante > 0);
-        }
-        if (seg >= TIEMPO_MAX_PRUEBA) pasarASiguienteConCero();
-        else if (tiempoRestanteEl) tiempoRestanteEl.textContent = 'Tiempo esta prueba: ' + pad(Math.floor(restante/60)) + ':' + pad(restante%60) + ' / 3:00';
-      }, 200);
-      if (temporizadorEl) temporizadorEl.textContent = '03:00';
-      if (tiempoRestanteEl) tiempoRestanteEl.textContent = 'Tiempo esta prueba: 3:00 / 3:00';
-      var r = retos[retoIdx];
-      tituloEl.textContent = r.titulo || 'Ordena los elementos';
+      if (feedbackRetoEl) {
+        feedbackRetoEl.textContent = '';
+        feedbackRetoEl.className = 'reto-feedback';
+      }
+      panel.classList.remove('reto-cambio-prueba');
+      if (completadosLote > 0) {
+        void panel.offsetWidth;
+        panel.classList.add('reto-cambio-prueba');
+        setTimeout(function () { panel.classList.remove('reto-cambio-prueba'); }, 400);
+      }
+      tituloEl.textContent = prueba.titulo;
       listaEl.innerHTML = '';
-      var items = (r.items || []).slice();
-      var ordenCorrecto = r.orden_correcto || items.map(function(_, i) { return i; });
-      var shuffled = items.slice().sort(function() { return Math.random() - 0.5; });
-      shuffled.forEach(function(texto) {
+      var pasosPrueba = prueba.pasos.slice();
+      var shuffled = mezclar(pasosPrueba.slice());
+      shuffled.forEach(function (paso) {
         var li = document.createElement('li');
-        li.textContent = texto;
-        li.draggable = true;
+        li.className = 'reto-item-row';
+        li.draggable = false;
+        li.setAttribute('data-reto-clave', String(paso.clave));
+
+        var handle = document.createElement('span');
+        handle.className = 'reto-item-handle';
+        handle.draggable = true;
+        handle.textContent = '⋮⋮';
+        handle.title = 'Arrastrar para ordenar';
+        handle.setAttribute('aria-grabbed', 'false');
+
+        var textSpan = document.createElement('span');
+        textSpan.className = 'reto-item-texto';
+        textSpan.textContent = paso.visible;
+
+        var controls = document.createElement('span');
+        controls.className = 'reto-item-controles';
+        var btnUp = document.createElement('button');
+        btnUp.type = 'button';
+        btnUp.className = 'btn-reto-mover';
+        btnUp.setAttribute('aria-label', 'Subir');
+        btnUp.textContent = '▲';
+        var btnDown = document.createElement('button');
+        btnDown.type = 'button';
+        btnDown.className = 'btn-reto-mover';
+        btnDown.setAttribute('aria-label', 'Bajar');
+        btnDown.textContent = '▼';
+
+        btnUp.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          if (juegoRetoTerminado) return;
+          var prev = li.previousElementSibling;
+          if (prev) listaEl.insertBefore(li, prev);
+        });
+        btnDown.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          if (juegoRetoTerminado) return;
+          var nx = li.nextElementSibling;
+          if (nx) listaEl.insertBefore(nx, li);
+        });
+
+        handle.addEventListener('dragstart', function (e) {
+          if (juegoRetoTerminado) { e.preventDefault(); return; }
+          e.dataTransfer.setData('text/plain', 'reto-item');
+          e.dataTransfer.effectAllowed = 'move';
+          li.classList.add('dragging');
+          handle.setAttribute('aria-grabbed', 'true');
+        });
+        handle.addEventListener('dragend', function () {
+          li.classList.remove('dragging');
+          handle.setAttribute('aria-grabbed', 'false');
+        });
+
+        controls.appendChild(btnUp);
+        controls.appendChild(btnDown);
+        li.appendChild(handle);
+        li.appendChild(textSpan);
+        li.appendChild(controls);
         listaEl.appendChild(li);
       });
-      window._rallyOrdenCorrecto = ordenCorrecto.map(function(i) { return items[i]; });
-      listaEl.querySelectorAll('li').forEach(function(li) {
-        li.addEventListener('dragstart', function(e) { e.dataTransfer.setData('text/plain', ''); li.classList.add('dragging'); });
-        li.addEventListener('dragend', function() { li.classList.remove('dragging'); });
-      });
-      listaEl.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        var drag = listaEl.querySelector('.dragging');
-        if (!drag) return;
-        var after = null;
-        listaEl.querySelectorAll('li:not(.dragging)').forEach(function(el) {
-          var box = el.getBoundingClientRect();
-          if (e.clientY < box.top + box.height/2) { after = el; }
+      window._rallyClavesCorrectas = prueba.clavesCorrectas.slice();
+      if (!dragoverRetoRegistrado) {
+        dragoverRetoRegistrado = true;
+        listaEl.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          var drag = listaEl.querySelector('li.dragging');
+          if (!drag) return;
+          var siblings = listaEl.querySelectorAll('li:not(.dragging)');
+          var insertBefore = null;
+          for (var si = 0; si < siblings.length; si++) {
+            var box = siblings[si].getBoundingClientRect();
+            if (e.clientY < box.top + box.height / 2) {
+              insertBefore = siblings[si];
+              break;
+            }
+          }
+          if (insertBefore) listaEl.insertBefore(drag, insertBefore);
+          else listaEl.appendChild(drag);
         });
-        if (after) listaEl.insertBefore(drag, after); else listaEl.appendChild(drag);
-      });
+        listaEl.addEventListener('drop', function (e) {
+          e.preventDefault();
+        });
+      }
     }
-    btnReto.addEventListener('click', function() {
-      var correctOrder = window._rallyOrdenCorrecto || [];
+
+    btnReto.addEventListener('click', function () {
+      if (juegoRetoTerminado) return;
+      var correctClaves = window._rallyClavesCorrectas || [];
       var lis = listaEl.querySelectorAll('li');
-      var current = [].map.call(lis, function(li) { return li.textContent.trim(); });
-      var ok = correctOrder.length === current.length && correctOrder.every(function(v, i) { return v === current[i]; });
+      var current = [].map.call(lis, function (li) {
+        return Number(li.getAttribute('data-reto-clave'));
+      });
+      var ok = correctClaves.length === current.length && correctClaves.every(function (c, i) { return c === current[i]; });
       if (ok) {
-        if (intervaloReto) { clearInterval(intervaloReto); intervaloReto = null; }
-        var segundosReto = tiempoInicioReto ? (Date.now() - tiempoInicioReto) / 1000 : 0;
-        tiempoTotalRetos += segundosReto;
-        var puntaje = puntajePorTiempo(segundosReto);
-        puntajesRetos.push(puntaje);
-        agregarPuntajeALista(puntajesRetos.length, puntaje, false);
-        lis.forEach(function(li) { li.classList.add('correcto'); });
-        retoIdx++;
-        setTimeout(mostrarReto, 800);
+        var msPrueba = tiempoInicioReto ? (Date.now() - tiempoInicioReto) : 0;
+        var nEnLote = loteRetos.length;
+        completadosLote++;
+        agregarTiempoALista(completadosLote, msPrueba);
+        lis.forEach(function (li) { li.classList.add('correcto'); });
+        if (completadosLote >= nEnLote) {
+          finalizarRetoExitoso();
+          return;
+        }
+        if (feedbackRetoEl) {
+          feedbackRetoEl.textContent = '¡Correcto! Siguiente reto…';
+          feedbackRetoEl.className = 'reto-feedback reto-feedback-exito';
+        }
+        setTimeout(function () {
+          if (juegoRetoTerminado) return;
+          mostrarReto();
+        }, 550);
+      } else {
+        lis.forEach(function (li) { li.classList.remove('correcto'); });
+        if (feedbackRetoEl) {
+          feedbackRetoEl.textContent = 'Orden incorrecto. Ajusta la lista e inténtalo de nuevo.';
+          feedbackRetoEl.className = 'reto-feedback reto-feedback-error';
+        }
       }
     });
     mostrarReto();

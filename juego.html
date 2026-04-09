@@ -9,13 +9,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="pantalla-juego">
+  <button type="button" class="btn-inicio" onclick="irInicio()" aria-label="Volver al inicio">← Inicio</button>
   <div class="rally-container">
+    <div class="logo-sistemas-marca">
+      <img class="logo-sistemas" src="assets/images/logo-sistemas.png?v=3" alt="Ingeniería de Sistemas" width="162" height="162" loading="lazy" decoding="async" />
+    </div>
     <div class="temporizador-juego" id="temporizador">00:00</div>
     <p id="timer-leyenda" class="text-center" style="font-size:0.9rem;color:var(--primary);opacity:0.9;margin-top:-8px;margin-bottom:8px;"></p>
     <p class="text-center mb-2" style="color:var(--primary);"><span id="nombre-categoria">—</span> — Equipo: <strong id="nombre-equipo">—</strong></p>
     <div id="contenedor-juego"></div>
   </div>
+  <script>
+    function irInicio() {
+      window.location.href = 'index.html';
+    }
+  </script>
   <script src="assets/js/datos.js"></script>
+  <script src="assets/js/rally-tiempo.js"></script>
   <script src="assets/js/rally-html.js"></script>
 </body>
 </html>

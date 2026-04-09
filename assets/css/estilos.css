@@ -58,6 +58,114 @@ html, body {
   margin: 0 auto;
 }
 
+/* ─── Logo Ingeniería de Sistemas (todas las vistas en juego.html) ─── */
+body.pantalla-juego .rally-container {
+  position: relative;
+}
+
+.logo-sistemas-marca {
+  position: absolute;
+  top: 12px;
+  right: clamp(8px, 2vw, 24px);
+  z-index: 9;
+  line-height: 0;
+  pointer-events: auto;
+  animation: logo-sistemas-flota 3.6s ease-in-out infinite;
+}
+
+.logo-sistemas {
+  width: clamp(114px, 22.28vw, 162px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 50%;
+  animation: logo-sistemas-pulso 2.4s ease-in-out infinite;
+  filter:
+    drop-shadow(0 0 6px rgba(0, 255, 204, 0.65))
+    drop-shadow(0 0 14px rgba(0, 212, 255, 0.4));
+  transition: filter 0.35s ease, transform 0.35s ease;
+  transform-origin: center center;
+}
+
+@keyframes logo-sistemas-pulso {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes logo-sistemas-flota {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .logo-sistemas-marca:hover {
+    animation-play-state: paused;
+  }
+  .logo-sistemas-marca:hover .logo-sistemas {
+    animation-play-state: paused;
+    transform: scale(1.1);
+    filter:
+      drop-shadow(0 0 12px #00ffcc)
+      drop-shadow(0 0 24px rgba(0, 255, 204, 0.75))
+      drop-shadow(0 0 36px rgba(0, 212, 255, 0.45));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-sistemas-marca,
+  .logo-sistemas {
+    animation: none;
+  }
+  .logo-sistemas {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 204, 0.5));
+  }
+  .logo-sistemas-marca:hover .logo-sistemas {
+    transform: none;
+    filter: drop-shadow(0 0 10px rgba(0, 255, 204, 0.55));
+  }
+}
+
+/* Volver al inicio: juego.html + flujo (elegir juego/categoría/resultados, etc.) */
+body.pantalla-juego .btn-inicio,
+body.pantalla-rally-nav .btn-inicio {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  left: max(16px, env(safe-area-inset-left, 0px));
+  z-index: 10000;
+  font-family: var(--font-title);
+  font-size: clamp(0.75rem, 2.2vw, 0.95rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0a0e17;
+  background: #00ffc3;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(0, 255, 195, 0.35);
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+}
+
+body.pantalla-juego .btn-inicio:hover,
+body.pantalla-rally-nav .btn-inicio:hover {
+  background: #00cfa0;
+  box-shadow: 0 0 24px rgba(0, 255, 195, 0.5);
+}
+
+body.pantalla-juego .btn-inicio:active,
+body.pantalla-rally-nav .btn-inicio:active {
+  transform: scale(0.98);
+}
+
+@media (hover: none) {
+  body.pantalla-juego .btn-inicio:hover,
+  body.pantalla-rally-nav .btn-inicio:hover {
+    background: #00ffc3;
+    box-shadow: 0 0 18px rgba(0, 255, 195, 0.35);
+  }
+}
+
 /* Títulos */
 h1, .titulo-principal {
   font-family: var(--font-title);
@@ -127,7 +235,8 @@ h2 {
 }
 
 /* Banner y logos */
-.banner-rally {
+.banner-rally,
+.banner-rally2 {
   width: 100%;
   max-width: 800px;
   height: auto;
@@ -136,20 +245,48 @@ h2 {
   box-shadow: 0 0 40px var(--primary-glow);
 }
 
+/* Fila de logos: flex centrado; Sistemas en posición central (3/5) + scale(1.2) */
 .logos-programas {
+  --logo-altura: 70px;
   display: flex;
-  gap: 40px;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  margin: 30px 0;
+  gap: 20px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 30px auto;
 }
 
-.logos-programas img {
-  height: 70px;
+.logo-prog-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(0, 40, 70, 0.55);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  min-height: calc(var(--logo-altura) + 24px);
+}
+
+/* Espacio extra para scale(2.43): 1.2 × 1.35 × 1.5 */
+.logo-prog-wrap--sistemas {
+  padding: 27px 33px;
+  margin: 0 8px;
+}
+
+.logos-programas .logo-prog {
+  height: var(--logo-altura);
   width: auto;
+  max-width: min(28vw, 180px);
   object-fit: contain;
-  filter: drop-shadow(0 0 15px var(--primary-glow));
+  filter: drop-shadow(0 0 12px var(--primary-glow));
+  display: block;
+}
+
+.logos-programas .logo-prog--sistemas {
+  transform: scale(calc(1.2 * 1.35 * 1.5));
+  transform-origin: center center;
 }
 
 /* Pantalla bienvenida */
@@ -231,6 +368,15 @@ h2 {
   margin-right: auto;
 }
 
+/* Memorama: 3 x 3 (9 categorías) */
+.grid-opciones.grid-memorama-3x3 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, auto);
+  max-width: min(95vw, 900px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .grid-opciones .opcion-card {
   background: rgba(0, 40, 80, 0.5);
   border: 2px solid var(--border);
@@ -284,6 +430,60 @@ h2 {
 .temporizador-juego.urgente {
   color: #ff6b6b !important;
   text-shadow: 0 0 20px rgba(255, 107, 107, 0.6) !important;
+}
+.temporizador-juego.temporizador-exito {
+  color: #4ade80 !important;
+  text-shadow: 0 0 22px rgba(74, 222, 128, 0.55) !important;
+}
+.temporizador-juego.temporizador-limite {
+  color: #ff6b6b !important;
+  text-shadow: 0 0 22px rgba(255, 107, 107, 0.65) !important;
+}
+
+/* Aviso “siguiente estación” (Quiz, Pistas, Reto): no cubre temporizador ni leyenda */
+.rally-estacion-final-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: clamp(104px, 19vh, 200px);
+  bottom: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px 32px;
+  box-sizing: border-box;
+  background: rgba(2, 12, 28, 0.94);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity 0.45s ease;
+  pointer-events: auto;
+}
+.rally-estacion-final-overlay.rally-estacion-final-salida {
+  opacity: 0;
+  pointer-events: none;
+}
+.rally-estacion-final-inner {
+  max-width: 36rem;
+  width: 100%;
+  text-align: center;
+  padding: 28px 24px 32px;
+  border-radius: 16px;
+  border: 2px solid var(--secondary);
+  box-shadow:
+    0 0 40px rgba(0, 255, 200, 0.25),
+    inset 0 0 60px rgba(0, 80, 120, 0.35);
+  background: rgba(0, 24, 48, 0.95);
+}
+.rally-estacion-final-texto {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: clamp(1.15rem, 3.8vw, 1.65rem);
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--secondary);
+  text-shadow: 0 0 18px var(--secondary-glow);
+  letter-spacing: 0.02em;
 }
 
 /* Pantalla de juego: más espacio para la matriz */
@@ -456,6 +656,19 @@ body.pantalla-juego #contenedor-juego {
 
 .quiz-opciones input { margin: 0; }
 
+.quiz-opciones label.quiz-feedback-correcto {
+  border-color: var(--secondary);
+  box-shadow: 0 0 18px var(--secondary-glow);
+}
+.quiz-opciones label.quiz-feedback-incorrecto {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 14px rgba(255, 107, 107, 0.45);
+}
+.quiz-opciones.quiz-opciones-bloqueadas label {
+  cursor: default;
+  pointer-events: none;
+}
+
 /* Pistas */
 .pista-texto {
   font-size: 1.3rem;
@@ -490,7 +703,7 @@ body.pantalla-juego #contenedor-juego {
   text-align: center;
 }
 
-.pantalla-resultados .calificacion-numero {
+.pantalla-resultados .resultado-tiempo-destacado {
   font-family: var(--font-title);
   font-size: 5rem;
   font-weight: 900;
@@ -552,23 +765,80 @@ body.pantalla-juego #contenedor-juego {
   margin: 20px 0;
 }
 
-.reto-lista li {
-  padding: 16px 24px;
+.reto-lista li.reto-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
   margin: 8px 0;
   background: rgba(0, 40, 80, 0.5);
   border: 2px solid var(--border);
   border-radius: 8px;
-  cursor: grab;
-  transition: all 0.2s;
+  cursor: default;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s ease;
 }
 
-.reto-lista li:hover {
+.reto-lista li.reto-item-row:hover {
   border-color: var(--primary);
 }
 
-.reto-lista li.dragging {
-  opacity: 0.7;
+.reto-item-handle {
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+  cursor: grab;
+  color: var(--primary);
+  opacity: 0.85;
+  font-size: 1rem;
+  line-height: 1.2;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.reto-item-handle:active {
   cursor: grabbing;
+}
+
+.reto-item-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.reto-item-controles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-reto-mover {
+  min-width: 36px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-family: var(--font-body);
+  color: var(--primary);
+  background: rgba(0, 40, 80, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.12s ease;
+}
+
+.btn-reto-mover:hover {
+  border-color: var(--primary);
+  background: rgba(0, 212, 255, 0.12);
+}
+
+.btn-reto-mover:active {
+  transform: scale(0.95);
+}
+
+.reto-lista li.dragging {
+  opacity: 0.85;
+  transform: scale(0.99);
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.25);
 }
 
 .reto-lista li.correcto {
@@ -576,7 +846,45 @@ body.pantalla-juego #contenedor-juego {
   box-shadow: 0 0 15px var(--secondary-glow);
 }
 
-/* Quiz, Pistas, Reto: layout de dos columnas (prueba a la izquierda, puntajes a la derecha) */
+.reto-progreso-lote {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--secondary);
+  margin: 0 0 10px;
+  text-align: center;
+  text-shadow: 0 0 10px var(--secondary-glow, rgba(0, 255, 200, 0.35));
+}
+
+.reto-feedback {
+  min-height: 1.5em;
+  margin: 8px 0 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  transition: opacity 0.25s ease;
+}
+.reto-feedback-exito {
+  color: var(--secondary);
+  text-shadow: 0 0 12px var(--secondary-glow);
+}
+.reto-feedback-error {
+  color: #ff6b6b;
+}
+
+@keyframes reto-cambio-prueba {
+  from {
+    opacity: 0.4;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.panel-rally.reto-cambio-prueba {
+  animation: reto-cambio-prueba 0.35s ease;
+}
+
+/* Quiz, Pistas, Reto: layout de dos columnas (prueba a la izquierda, tiempos a la derecha) */
 .reto-contenedor-flex,
 .quiz-contenedor-flex,
 .pistas-contenedor-flex {
@@ -600,7 +908,7 @@ body.pantalla-juego #contenedor-juego {
   width: 280px;
   flex-shrink: 0;
 }
-.reto-puntajes-panel {
+.reto-tiempos-panel {
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -608,17 +916,17 @@ body.pantalla-juego #contenedor-juego {
   position: sticky;
   top: 20px;
 }
-.reto-puntajes-panel h3 {
+.reto-tiempos-panel h3 {
   font-family: var(--font-title);
   font-size: 1.1rem;
   color: var(--primary);
   margin-bottom: 16px;
   text-align: center;
 }
-.reto-puntajes-lista {
+.reto-tiempos-lista {
   list-style: none;
 }
-.reto-puntajes-lista li {
+.reto-tiempos-lista li {
   padding: 8px 0;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   font-size: 1rem;
@@ -626,10 +934,10 @@ body.pantalla-juego #contenedor-juego {
   justify-content: space-between;
   align-items: center;
 }
-.reto-puntajes-lista li .numero { color: var(--primary); margin-right: 8px; }
-.reto-puntajes-lista li .puntaje { font-weight: 700; color: var(--secondary); }
-.reto-puntajes-lista li.tiempo-cumplido .puntaje,
-.reto-puntajes-lista li.incorrecto .puntaje { color: #ff6b6b; }
+.reto-tiempos-lista li .numero { color: var(--primary); margin-right: 8px; }
+.reto-tiempos-lista li .valor-tiempo { font-weight: 700; color: var(--secondary); }
+.reto-tiempos-lista li.tiempo-cumplido .valor-tiempo,
+.reto-tiempos-lista li.incorrecto .valor-tiempo { color: #ff6b6b; }
 .reto-tiempo-restante {
   font-size: 0.9rem;
   color: var(--secondary);
@@ -715,16 +1023,23 @@ body.pantalla-juego #contenedor-juego {
     padding: 20px 16px;
     margin: 12px 0;
   }
-  .banner-rally {
+  .banner-rally,
+  .banner-rally2 {
     max-width: 100%;
     margin-bottom: 16px;
   }
   .logos-programas {
-    gap: 16px;
+    --logo-altura: 44px;
+    gap: 12px;
+    max-width: 100%;
     margin: 16px 0;
   }
-  .logos-programas img {
-    height: 44px;
+  .logo-prog-wrap {
+    padding: 8px 10px;
+  }
+  .logo-prog-wrap--sistemas {
+    margin: 0 4px;
+    padding: 18px 20px;
   }
   .pantalla-bienvenida .btn-rally {
     margin-top: 24px;
@@ -737,6 +1052,11 @@ body.pantalla-juego #contenedor-juego {
     margin: 20px 0;
   }
   .grid-opciones.grid-memorama-4x3 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    max-width: 100%;
+  }
+  .grid-opciones.grid-memorama-3x3 {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: auto;
     max-width: 100%;
@@ -791,11 +1111,11 @@ body.pantalla-juego #contenedor-juego {
   .pistas-contenedor-flex .reto-panel-der {
     width: 100%;
   }
-  .reto-puntajes-panel {
+  .reto-tiempos-panel {
     position: static;
     padding: 16px;
   }
-  .reto-puntajes-panel h3 {
+  .reto-tiempos-panel h3 {
     font-size: 1rem;
   }
   .quiz-pregunta {
@@ -817,7 +1137,7 @@ body.pantalla-juego #contenedor-juego {
     padding: 14px 18px;
     font-size: 1rem;
   }
-  .pantalla-resultados .calificacion-numero {
+  .pantalla-resultados .resultado-tiempo-destacado {
     font-size: 3rem;
   }
   .tiempo-obtenido {
@@ -827,9 +1147,15 @@ body.pantalla-juego #contenedor-juego {
     padding: 14px 16px;
     font-size: 1rem;
   }
-  .reto-lista li {
-    padding: 12px 16px;
+  .reto-lista li.reto-item-row {
+    padding: 10px 12px;
     min-height: 48px;
+  }
+  .btn-reto-mover {
+    min-width: 44px;
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
   }
   #timer-leyenda {
     font-size: 0.75rem;
@@ -855,6 +1181,9 @@ body.pantalla-juego #contenedor-juego {
     font-size: 1rem;
   }
   .grid-opciones.grid-memorama-4x3 {
+    grid-template-columns: 1fr;
+  }
+  .grid-opciones.grid-memorama-3x3 {
     grid-template-columns: 1fr;
   }
 }

@@ -8,13 +8,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="pantalla-rally-nav">
+  <button type="button" class="btn-inicio" onclick="irInicio()" aria-label="Volver al inicio">← Inicio</button>
   <div class="rally-container">
     <h1 class="titulo-principal text-center">Elige categoría</h1>
     <p class="text-center mb-2" style="color:var(--primary);">Juego: <strong id="nombre-juego">—</strong></p>
 
     <div id="contenedor-opciones"></div>
   </div>
+  <script>
+    function irInicio() {
+      window.location.href = 'index.html';
+    }
+  </script>
   <script src="assets/js/datos.js"></script>
   <script>
     var params = new URLSearchParams(window.location.search);
@@ -22,19 +28,54 @@
     var equipo = '';
     try { equipo = localStorage.getItem('rally_equipo') || ''; } catch (e) {}
     if (!equipo) { window.location.href = 'registro.html'; }
-    var nombres = { memorama: 'Memorama', quiz: 'Quiz', pistas: 'Pistas', reto: 'Reto' };
-    document.getElementById('nombre-juego').textContent = nombres[juego] || juego;
+    if (juego !== 'memorama') {
+      window.location.href = 'seleccion-juego.html';
+    }
+    document.getElementById('nombre-juego').textContent = 'Memorama';
+
+    function mezclar(arr) {
+      return arr.sort(function () { return Math.random() - 0.5; });
+    }
+
+    /** Exactamente 9 categorías; al menos 3 con tematicaNueva === true (si existen en datos). */
+    function elegirNueveCategoriasMemorama(todas) {
+      if (!todas || !todas.length) return [];
+      var nuevas = todas.filter(function (c) { return c.tematicaNueva === true; });
+      var idsElegidos = {};
+      var elegidas = [];
+      mezclar(nuevas);
+      var needNuevas = Math.min(3, nuevas.length);
+      for (var i = 0; i < needNuevas; i++) {
+        elegidas.push(nuevas[i]);
+        idsElegidos[nuevas[i].id] = true;
+      }
+      var resto = todas.filter(function (c) { return !idsElegidos[c.id]; });
+      mezclar(resto);
+      while (elegidas.length < 9 && resto.length) {
+        var c = resto.pop();
+        if (!idsElegidos[c.id]) {
+          idsElegidos[c.id] = true;
+          elegidas.push(c);
+        }
+      }
+      if (elegidas.length < 9) {
+        mezclar(todas);
+        for (var t = 0; t < todas.length && elegidas.length < 9; t++) {
+          if (!idsElegidos[todas[t].id]) {
+            idsElegidos[todas[t].id] = true;
+            elegidas.push(todas[t]);
+          }
+        }
+      }
+      return mezclar(elegidas);
+    }
 
     var cont = document.getElementById('contenedor-opciones');
-    if (juego === 'memorama' && window.RALLY_DATOS && RALLY_DATOS.memorama) {
+    if (window.RALLY_DATOS && RALLY_DATOS.memorama) {
       var grid = document.createElement('div');
-      grid.className = 'grid-opciones grid-memorama-4x3';
-      var categorias = RALLY_DATOS.memorama.slice();
-      for (var i = categorias.length - 1; i > 0; i--) {
-        var r = Math.floor(Math.random() * (i + 1));
-        var t = categorias[i]; categorias[i] = categorias[r]; categorias[r] = t;
-      }
-      categorias.forEach(function(c) {
+      grid.className = 'grid-opciones grid-memorama-3x3';
+      var categorias = elegirNueveCategoriasMemorama(RALLY_DATOS.memorama.slice());
+      categorias.forEach(function (c) {
         var a = document.createElement('a');
         a.href = 'juego.html?tipo=memorama&categoria=' + encodeURIComponent(c.id);
         a.className = 'opcion-card';
@@ -42,14 +83,6 @@
         grid.appendChild(a);
       });
       cont.appendChild(grid);
-    } else if (juego === 'quiz') {
-      cont.innerHTML = '<div class="panel-rally text-center"><p class="mb-2">Trivias de Ingeniería.</p><a href="juego.html?tipo=quiz" class="btn-rally">Iniciar Quiz</a></div>';
-    } else if (juego === 'pistas') {
-      cont.innerHTML = '<div class="panel-rally text-center"><p class="mb-2">Resuelve acertijos.</p><a href="juego.html?tipo=pistas" class="btn-rally">Iniciar Pistas</a></div>';
-    } else if (juego === 'reto') {
-      cont.innerHTML = '<div class="panel-rally text-center"><p class="mb-2">Retos de ordenar contra el tiempo.</p><a href="juego.html?tipo=reto" class="btn-rally">Iniciar Reto</a></div>';
-    } else {
-      window.location.href = 'seleccion-juego.html';
     }
     function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
   </script>

@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="pantalla-rally-nav">
+  <button type="button" class="btn-inicio" onclick="irInicio()" aria-label="Volver al inicio">← Inicio</button>
   <div class="rally-container">
     <h1 class="titulo-principal text-center">Registro del equipo</h1>
     <div class="panel-rally">
@@ -21,6 +22,9 @@
     </div>
   </div>
   <script>
+    function irInicio() {
+      window.location.href = 'index.html';
+    }
     document.getElementById('form-registro').addEventListener('submit', function(e) {
       e.preventDefault();
       var nombre = document.getElementById('nombre_equipo').value.trim();
