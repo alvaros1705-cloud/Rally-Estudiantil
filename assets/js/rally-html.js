@@ -460,6 +460,7 @@
         origIdx: pi,
         pista: raw.pista,
         respuesta: raw.respuesta,
+        respuestasAceptadas: raw.respuestasAceptadas,
         indicio: raw.indicio,
         estado: null
       });
@@ -517,6 +518,16 @@
         .trim()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function respuestaPistaCoincide(usuarioNorm, item) {
+      if (usuarioNorm === normalizarTexto(item.respuesta)) return true;
+      var alt = item.respuestasAceptadas;
+      if (!alt || !alt.length) return false;
+      for (var a = 0; a < alt.length; a++) {
+        if (usuarioNorm === normalizarTexto(alt[a])) return true;
+      }
+      return false;
     }
 
     function agregarTiempoALista(n, ms) {
@@ -637,7 +648,7 @@
         setTimeout(function () { inputEl.style.borderColor = ''; }, 800);
         return;
       }
-      if (usuarioNorm === normalizarTexto(item.respuesta)) {
+      if (respuestaPistaCoincide(usuarioNorm, item)) {
         var ms = tiempoInicioPista ? (Date.now() - tiempoInicioPista) : 0;
         var oid = item.origIdx;
         if (!acertijosTiempoRegistrado[oid]) {

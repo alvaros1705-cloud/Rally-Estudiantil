@@ -2,6 +2,7 @@
  * Rally Estudiantil 2.0 - Datos para versión HTML (Memorama, Quiz, Pistas, Reto)
  * Memorama: parejas IGUALES. tematicaNueva: true cuenta para la regla "≥3 nuevas" al elegir 9 categorías.
  * Quiz / Pistas: campo opcional categoria (temática) para mezcla diversa por partida.
+ * Pistas: respuesta (obligatoria) + opcional respuestasAceptadas: string[] (sinónimos; se comparan igual que respuesta, sin tildes ni mayúsculas).
  * Reto: { pregunta, respuestaCorrecta, categoria } o legado { titulo, items, orden_correcto }.
  * respuestaCorrecta: strings o { texto, anio } / { texto, orden } / { texto, clave } (orden interno; en pantalla solo texto).
  */
@@ -75,10 +76,10 @@ window.RALLY_DATOS = {
   pistas: [
     { categoria: 'Sistemas y tecnología', pista: 'Soy un conjunto de pasos ordenados que resuelven un problema. Los programadores me escriben cada día. ¿Qué soy?', respuesta: 'algoritmo', indicio: 'Piensa en una receta o en instrucciones paso a paso.' },
     { categoria: 'Sistemas y tecnología', pista: 'Nací como proyecto militar. Conecto computadoras de todo el mundo. ¿Cómo me llamo?', respuesta: 'internet', indicio: 'Red global que permite enviar correos y ver páginas web.' },
-    { categoria: 'Sistemas y tecnología', pista: 'Aprendo de los datos sin que me programen cada regla. Soy la base de muchos asistentes. ¿Qué soy?', respuesta: 'inteligencia artificial', indicio: 'Las máquinas que "aprenden" de ejemplos.' },
+    { categoria: 'Sistemas y tecnología', pista: 'Aprendo de los datos sin que me programen cada regla. Soy la base de muchos asistentes. ¿Qué soy?', respuesta: 'inteligencia artificial', respuestasAceptadas: ['machine learning', 'aprendizaje automático', 'aprendizaje automatico', 'ml', 'ia'], indicio: 'Las máquinas que "aprenden" de ejemplos.' },
     { categoria: 'Mecánica e ingeniería', pista: 'Convierto la energía en movimiento giratorio. Estoy en autos, ventiladores y lavadoras. ¿Qué soy?', respuesta: 'motor', indicio: 'Giro y muevo cosas; uso electricidad o combustible.' },
     { categoria: 'Sistemas y tecnología', pista: 'Soy un error en el software. Mi nombre viene de un insecto que encontraron dentro de una computadora. ¿Qué soy?', respuesta: 'bug', indicio: 'En inglés, "bicho". Los programadores me buscan para corregir.' },
-    { categoria: 'Sistemas y tecnología', pista: 'Almaceno información de forma estructurada. Las aplicaciones me consultan con un lenguaje de tres letras. ¿Qué soy?', respuesta: 'base de datos', indicio: 'SQL es el lenguaje con el que me preguntan cosas.' },
+    { categoria: 'Sistemas y tecnología', pista: 'Almaceno información de forma estructurada. Las aplicaciones me consultan con un lenguaje de tres letras. ¿Qué soy?', respuesta: 'base de datos', respuestasAceptadas: ['sql', 'bd', 'base datos'], indicio: 'SQL es el lenguaje con el que me preguntan cosas.' },
     { categoria: 'Sistemas y tecnología', pista: 'Soy la "experiencia de usuario". Dos letras me representan. ¿Cuál es mi sigla?', respuesta: 'ux', indicio: 'Se refiere a cómo se siente el usuario al usar un producto.' },
     { categoria: 'Mecánica e ingeniería', pista: 'En robótica, soy el componente que ejecuta el movimiento. No solo miro el entorno, actúo. ¿Qué soy?', respuesta: 'actuador', indicio: 'El opuesto al sensor: yo hago que algo se mueva.' },
     { categoria: 'Mecánica e ingeniería', pista: 'Soy energía que no se agota: el sol, el viento, el agua. ¿Cómo me llaman?', respuesta: 'energia renovable', indicio: 'No uso combustibles fósiles como el petróleo.' },
